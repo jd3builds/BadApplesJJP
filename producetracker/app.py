@@ -9,6 +9,7 @@ from kivy import utils
 from kivy.config import Config
 from producetracker.utilities import *
 from producetracker.database import *
+from producetracker.matching import match_item
 import os
 import os.path
 import kivy.resources

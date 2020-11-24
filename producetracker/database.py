@@ -696,28 +696,6 @@ def search_item(raw_item, item_list, name_index):
     res = [item[0] for item in curr]
     return res
 
-
-def match_item(raw_item):
-    sql_query_all_item = """SELECT * FROM general_items"""
-
-    connection = create_connection("expirations.db")
-
-    if connection is not None:
-        curs = execute_sql(connection, sql_query_all_item, (), commit=False)
-        results = curs.fetchall()
-        max = -1
-        curr = None
-        for i in results:
-            ratio = levenshtein(i[0], raw_item).item()
-            if ratio > max:
-                curr = i
-                max = ratio
-        return curr
-    else:
-        print("Unable to create expirations.db.")
-        return None
-
-
 if __name__ == "__main__":
     print(":)")
     create_settings_table()
