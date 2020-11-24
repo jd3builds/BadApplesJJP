@@ -5,6 +5,7 @@ from datetime import datetime as dt, date, timedelta
 import time
 import os.path
 
+
 # ----------------- HELPER FUNCTIONS ----------------- #
 
 
@@ -131,7 +132,41 @@ def create_storage_type_table():
     if connection is not None:
         execute_sql(connection, sql_create_storage_type_table, commit=False)
     else:
-        print("Unable to create storagetypes.db connection.")
+        print("Unable to create storagetypes.db connection")
+
+
+def create_recent_expirations_table():
+    sql_create_recent_expirations_table = """ CREATE TABLE IF NOT EXISTS recent_expirations(
+                                            id integer PRIMARY KEY,
+                                            itemName varchar NOT NULL,
+                                            trend10 varchar(10) NOT NULL,
+                                            trend integer NOT NULL
+                                        );"""
+
+    connection = create_connection("useritems.db")
+
+    if connection is not None:
+        execute_sql(connection, sql_create_recent_expirations_table, commit=False)
+    else:
+        print("Unable to create useritems.db connection")
+
+
+def create_settings_table():
+    sql_create_settings_table = """ CREATE TABLE IF NOT EXISTS settings(
+                                    id integer PRIMARY KEY,
+                                    pantrySort integer,
+                                    ideaSort integer,
+                                    primaryColor varchar,
+                                    secondaryColor varchar,
+                                    redThreshold integer
+                                );"""
+
+    connection = create_connection("useritems.db")
+
+    if connection is not None:
+        execute_sql(connection, sql_create_settings_table, commit=False)
+    else:
+        print("Unable to create useritems.db connection")
 
 
 # ----------------- INSERTION FUNCTIONS ----------------- #
@@ -156,7 +191,6 @@ def insert_general_table(item):
 # Inserts item in user_items table in useritems.db file
 # Returns True on successful insertion, returns False otherwise
 def insert_user_table(item):
-
     normal_days = 0
 
     if item[8] == 'Days' or item[8] == 'days':
@@ -238,10 +272,54 @@ def insert_storage_type_table(storage_type):
         return False
 
 
-# ----------------- UPDATE FUNCTIONS ----------------- #
+def insert_recent_expirations_table(recent_exp, use):
+    sql_insert_recent_expirations_table = """INSERT INTO recent_expirations (id, itemName, trend10, trend) VALUES(?, ?, ?, ?)"""
+
+    results = query_all_recent_expiration_items()
+    i = 0
+    for res in results:
+        if res[0] == i:
+            i += 1
+        else:
+            break
+
+    to_insert = [i, recent_exp.itemName]
+    trend_10 = "000000000"
+
+    if use:
+        trend_10 = trend_10 + "1"
+        trend = 1
+    else:
+        trend_10 = trend_10 + "2"
+        trend = -1
+
+    to_insert.append(trend_10)
+    to_insert.append(trend)
+
+    connection = create_connection("useritems.db")
+
+    if connection is not None:
+        return True if execute_sql(connection, sql_insert_recent_expirations_table, to_insert) is not None else False
+    else:
+        print("Unable to create useritems.db connection.")
+        return False
 
 
-# Updates item in general_items table in expirations.db file
+def insert_settings_table():
+    sql_insert_settings_table = """INSERT INTO settings (id, pantrySort, ideaSort, primaryColor, secondaryColor, redThreshold) VALUES(?, ?, ?, ?, ?, ?)"""
+
+    connection = create_connection("useritems.db")
+
+    settings = [1, 0, 0, '#99D19C', '#73AB84', 3]
+
+    if connection is not None:
+        return True if execute_sql(connection, sql_insert_settings_table, settings, 3) is not None else False
+    else:
+        print("Unable to create useritems.db connection.")
+        return False
+
+
+# ------settings_FUNCTIONS -------------settings item in general_items table in expirations.dbfile
 def update_general_table(item):
     sql_update_general_table = """ UPDATE general_items
                                     SET id = ? ,
@@ -331,6 +409,62 @@ def update_storage_type_table(storage_type):
         return False
 
 
+def update_recent_expirations_table(recent_exp, use):
+    sql_update_recent_expirations_table = """UPDATE recent_expirations
+                                            SET trend10 = ?,
+                                                trend = ?
+                                            WHERE id = ?
+                                            """
+    update_info = []
+    update_info.append(recent_exp[2])
+    update_info.append(recent_exp[3])
+    update_info.append(recent_exp[0])
+
+    # update the new trend10
+    update_info[0] = (update_info[0])[1:len(update_info[0])]
+    if use:
+        update_info[0] += "1"
+        update_info[1] += 1
+    else:
+        update_info[0] += "2"
+        update_info[1] += -1
+
+    connection = create_connection("useritems.db")
+
+    if connection is not None:
+        return True if execute_sql(connection, sql_update_recent_expirations_table, update_info) is not None else False
+    else:
+        print("Unable to create useritems.db connection.")
+        return False
+
+
+# id, pantrySort, ideaSort, primaryColor, secondaryColor
+def update_settings_table(new_settings):
+    sql_update_settings_table = """UPDATE settings
+                                    SET pantrySort = ?,
+                                        ideaSort = ?,
+                                        primaryColor = ?,
+                                        secondaryColor = ?,
+                                        redThreshold = ?
+                                    WHERE id = 1
+                                    """
+
+    default_settings = query_settings()
+    default_settings = default_settings[0]
+
+    for i, item in enumerate(new_settings):
+        if item is None:
+            new_settings[i] = default_settings[i]
+
+    connection = create_connection("useritems.db")
+
+    if connection is not None:
+        return True if execute_sql(connection, sql_update_settings_table, new_settings) is not None else False
+    else:
+        print("Unable to create useritems.db connection.")
+        return False
+
+
 # ----------------- QUERY FUNCTIONS ----------------- #
 
 
@@ -373,6 +507,62 @@ def query_user_item_by_name(name):
 
     if connection is not None:
         curs = execute_sql(connection, sql_query_user_item, (name,), commit=False)
+        results = curs.fetchall()
+        return results
+    else:
+        print("Unable to create useritems.db connection.")
+        return None
+
+
+def query_recent_expiration_item_by_id(id):
+    sql_query_recent_expiration_item = """SELECT * FROM recent_expirations WHERE id = ?"""
+
+    connection = create_connection("useritems.db")
+
+    if connection is not None:
+        curs = execute_sql(connection, sql_query_recent_expiration_item, (id,), commit=False)
+        results = curs.fetchall()
+        return results
+    else:
+        print("Unable to create useritems.db connection.")
+        return None
+
+
+def query_recent_expiration_item_by_name(name):
+    sql_query_recent_expiration_item = """SELECT * FROM recent_expirations WHERE itemName LIKE '%'||?||'%'"""
+
+    connection = create_connection("useritems.db")
+
+    if connection is not None:
+        curs = execute_sql(connection, sql_query_recent_expiration_item, (name,), commit=False)
+        results = curs.fetchall()
+        return results
+    else:
+        print("Unable to create useritems.db connection.")
+        return None
+
+
+def query_all_recent_expiration_items():
+    sql_query_all_recent_expiration_items = """SELECT * FROM recent_expirations"""
+
+    connection = create_connection("useritems.db")
+
+    if connection is not None:
+        curs = execute_sql(connection, sql_query_all_recent_expiration_items, commit=False)
+        results = curs.fetchall()
+        return results
+    else:
+        print("Unable to create useritems.db connection.")
+        return None
+
+
+def query_settings():
+    sql_query_settings = """SELECT * FROM settings"""
+
+    connection = create_connection("useritems.db")
+
+    if connection is not None:
+        curs = execute_sql(connection, sql_query_settings, commit=False)
         results = curs.fetchall()
         return results
     else:
@@ -461,6 +651,53 @@ def delete_all_storage_types():
         return False
 
 
+def delete_all_recent_expiration_items():
+    sql_delete_all_items = """DELETE FROM recent_expirations"""
+
+    connection = create_connection("useritems.db")
+
+    if connection is not None:
+        return True if execute_sql(connection, sql_delete_all_items) is not None else False
+    else:
+        print("Unable to create useritems.db connection.")
+        return False
+
+
+def levenshtein(s, t):
+    rows = len(s) + 1
+    cols = len(t) + 1
+    distance = np.zeros((rows, cols), dtype=int)
+
+    for i in range(1, rows):
+        for k in range(1, cols):
+            distance[i][0] = i
+            distance[0][k] = k
+
+    for col in range(1, cols):
+        for row in range(1, rows):
+            if s[row - 1] == t[col - 1]:
+                cost = 0
+            else:
+                cost = 2
+            distance[row][col] = min(distance[row - 1][col] + 1,  # Cost of deletions
+                                     distance[row][col - 1] + 1,  # Cost of insertions
+                                     distance[row - 1][col - 1] + cost)  # Cost of substitutions
+    Ratio = ((len(s) + len(t)) - distance[row][col]) / (len(s) + len(t))
+    return Ratio
+
+
+def search_item(raw_item, item_list, name_index):
+    curr = []
+    for i in item_list:
+        ratio = levenshtein(i[name_index], raw_item).item()
+        curr.append([i, ratio])
+
+    curr = sorted(curr, key=lambda x: x[1], reverse=True)
+    res = [item[0] for item in curr]
+    return res
+
 if __name__ == "__main__":
-    # create_general_table()
-    create_user_table()
+    print(":)")
+    create_settings_table()
+    insert_settings_table()
+    #update_settings_table([0, None, None, None])

@@ -30,7 +30,6 @@ def valid_string(str):
     if not str:
         return False
     not_empty = False
-    # print(str)
     for c in str:
         if (c <= 'z' and c >= 'a') or (c <= 'Z' and c >= 'A'):
             not_empty = True
@@ -69,3 +68,7 @@ class Produce:
     def return_as_tuple(self):
         return (self.__itemName, self.__id, self.__category, self.__subcategory, self.__storageType, self.__unopened, \
         self.__expirationLowerBound, self.__expirationUpperBound, self.__expirationUnitType, self.__expirationDate)
+
+    def return_as_list(self):
+        return [self.__itemName, self.__id, self.__category, self.__subcategory, self.__storageType, self.__unopened, \
+        self.__expirationLowerBound, self.__expirationUpperBound, self.__expirationUnitType, self.__expirationDate]
