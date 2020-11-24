@@ -1,5 +1,63 @@
 import numpy as np
 from database import create_connection, execute_sql
+from queue import PriorityQueue
+
+class CustomPriorityQueue(PriorityQueue):
+    def _put(self, item):
+        return super()._put((self._get_priority(item), item))
+
+    def _get(self):
+        return super()._get()[1]
+
+    def _get_priority(self, item):
+        return item[1]
+
+def match_multiple_items(raw_item):
+    sql_query_all_item = """SELECT * FROM general_items"""
+
+    connection = create_connection("expirations.db")
+
+    if connection is not None:
+        curs = execute_sql(connection, sql_query_all_item, (), commit=False)
+        results = curs.fetchall()
+        return match_multiple(raw_item, results)
+    else:
+        print("Unable to create expirations.db.")
+        return None
+
+
+def match_multiple(target_item, current_items):
+    q = CustomPriorityQueue()
+    top_items = set()
+    for i in current_items:
+        first = target_item.lower()
+        second = i[0].lower()
+
+        ratio = levenshtein(first, second).item() * 0.3 + dice_coefficient(first, second) * 0.7
+        if q.qsize() < 3:
+            q.put((i, ratio))
+            top_items.add(i[0])
+        elif i[0] not in top_items and q.qsize() == 3 and ratio > q.queue[0][0]:
+            q.get()
+            q.put((i, ratio))
+            top_items.add(i[0])
+    results = []
+    while not q.empty():
+         results.append(q.get())
+    return results
+
+def match_single_item(raw_item):
+    sql_query_all_item = """SELECT * FROM general_items"""
+
+    connection = create_connection("expirations.db")
+
+    if connection is not None:
+        curs = execute_sql(connection, sql_query_all_item, (), commit=False)
+        results = curs.fetchall()
+        return match(raw_item, results)
+    else:
+        print("Unable to create expirations.db.")
+        return None
 
 def match(target_item, current_items, debug=False):
     max = -1
@@ -16,18 +74,6 @@ def match(target_item, current_items, debug=False):
         print("- Target string " + target_item + " matched to " + curr + " with ratio of " + str(max))
     return curr
 
-def match_item(raw_item):
-    sql_query_all_item = """SELECT * FROM general_items"""
-
-    connection = create_connection("expirations.db")
-
-    if connection is not None:
-        curs = execute_sql(connection, sql_query_all_item, (), commit=False)
-        results = curs.fetchall()
-        return match(raw_item, results)
-    else:
-        print("Unable to create expirations.db.")
-        return None
 
 def levenshtein(s, t):
     rows = len(s)+1
