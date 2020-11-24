@@ -6,6 +6,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.scrollview import ScrollView
 from kivy import utils
+from kivy.config import Config
 from producetracker.utilities import *
 from producetracker.database import *
 import os
@@ -13,8 +14,10 @@ import os.path
 import kivy.resources
 from PIL import Image
 import pytesseract
+from producetracker.enhance import preprocess
 
 kivy.require('1.11.1')
+Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
 kivy.resources.resource_add_path(os.path.join(os.path.dirname(__file__), 'resources'))
 pytesseract.pytesseract.tesseract_cmd = r'../pytesseract/tesseract'
 
@@ -25,34 +28,7 @@ pytesseract.pytesseract.tesseract_cmd = r'../pytesseract/tesseract'
 # Facilitates the transition between screens, as well as any functions that should be
 # executed across all screens.
 class Manager(ScreenManager):
-    swipe_listener = SwipeListener(5)
-
-    # Executed when user presses within display window.
-    # Called implicitly by many built-in widgets, such as buttons.
-    # Sets the initial coordinates of the SwipeListener.
-    # Parameter touch contains the coordinates and angle of the press.
-    def on_touch_down(self, touch):
-        if self.current != 'input':
-            self.swipe_listener.set_initial(touch.x)
-        super(Manager, self).on_touch_down(touch)  # completes other on_touch_down arguments (i.e. buttons)
-
-    # Executed when user releases from within display window.
-    # Handles the swipe direction, and sets new screen if applicable.
-    # Parameter touch contains the coordinates and angle of the release.
-    def on_touch_up(self, touch, *args):
-        swipe_direction = None
-        if self.current != 'input':
-            swipe_direction = self.swipe_listener.get_swipe_direction(touch.x)
-
-        if swipe_direction == 'left':
-            self.current = self.next()
-            if self.current == 'input':  # skip input page
-                self.current = self.next()
-
-        elif swipe_direction == 'right':
-            self.current = self.previous()
-            if self.current == 'input':  # skip input page
-                self.current = self.previous()
+    pass
 
 
 class LandingPage(Screen):
@@ -61,6 +37,7 @@ class LandingPage(Screen):
     def capture(self):
         camera = self.ids['camera']
         camera.export_to_png("IMG_SCANNED.png")
+        preprocess()
 
 
 class PantryPage(Screen):
@@ -79,7 +56,7 @@ class PantryPage(Screen):
         for item in all_items:
             self.produce_list.append(Produce(item))
 
-        # Query settings database for default sort option TODo
+        # Query settings database for default sort option. Updates relevant sorting variables.
         pantrySort = query_settings()[0][1]
         if pantrySort == 0:
             self.sort_method = self.sort_by_expiration
@@ -106,10 +83,8 @@ class PantryPage(Screen):
         if type(self.ids.title_bar.children[0]) == SearchBar:
             self.reset_title_bar()
 
-        # TODO sort by currently selected sorting option
+        # Sort the pantry by sort_method, passing parameter last_search if the last sort_method was sort_by_search
         self.sort_method() if self.sort_method != self.sort_by_search else self.sort_method(self.last_search)
-
-        # self.build_pantry_menu()
 
     # Sorts the produce_list in ascending order of expiration, unless sort=False. The scroll menu is then cleared, and
     # a new menu item is added to the scroll menu for each item in produce_list.
@@ -158,7 +133,7 @@ class PantryPage(Screen):
             match_id = insert_user_table(match)
             self.produce_list.append(Produce(query_user_item_by_id(match_id)[0]))
 
-            # TODO sort by currently selected sorting option, pass text param if by search
+            # Sort the pantry by sort_method, passing parameter last_search if the last sort_method was sort_by_search
             self.sort_method() if self.sort_method != self.sort_by_search else self.sort_method(self.last_search)
 
             # self.build_pantry_menu()
@@ -188,22 +163,21 @@ class PantryPage(Screen):
         for widget in reversed(self.title_widgets):
             self.ids.title_bar.add_widget(widget)
 
-    # TODO set search as sort_method and update last search
     # Pantry_list is re-ordered by a match ratio, in which items in the pantry_list that are most similar to the input
     # are ordered first. The pantry scroll menu is then rebuilt with this new ordering. Since produce_list stores
     # Produce objects and search_items takes a list, produce_list is converted to a list of lists. After the list is
-    # reordered by search, convert produce_list back to a list of produce items.
+    # reordered by search, produce_list is converted back to a list of produce items.
     def sort_by_search(self, text):
         self.produce_list = [item.return_as_list() for item in self.produce_list]
         self.produce_list = search_item(text, self.produce_list, 0)
         self.produce_list = [Produce(item) for item in self.produce_list]
         self.build_pantry_menu()
 
-        # TODO
         self.sort_method = self.sort_by_search
         self.last_search = text
 
-    # TODO implement ascend vs descend; and set as sort_method; and last_exp_sort
+    # Sorts the produce by expiration, ascending or descending, then rebuilding the pantry menu.
+    # Parameter button_press should be True when the function is called by a button press.
     def sort_by_expiration(self, button_press=False):
 
         if button_press:
@@ -219,7 +193,8 @@ class PantryPage(Screen):
 
         self.build_pantry_menu()
 
-    # TODO
+    # Sorts the produce by title, alphabetical or reverse, then rebuilding the pantry menu.
+    # Parameter button_press should be True when the function is called by a button press.
     def sort_by_title(self, button_press=False):
 
         if button_press:
@@ -235,19 +210,34 @@ class PantryPage(Screen):
 
         self.build_pantry_menu()
 
+    def erase_all(self):
+        self.produce_list.clear()
+        delete_all_user_items()
+
+    def consume_all(self):
+        self.ids.scroll_menu.consume_all()
+
+        # access scroll menu
+        # for each .remove(True)
+
+    def expire_all(self):
+        self.ids.scroll_menu.expire_all()
+        # "
+        # .remove(False)
+
 
 class IdeasPage(Screen):
     history_list = []  # list of all produce items that have been used or expired
     title_widgets = []  # list of all default title bar widgets
 
-    # Sorting variables todo
+    # Sorting variables
     sort_method = None
     last_search = None
 
-    # todo
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
+        # Queries the database for the default sort setting
         ideasSort = query_settings()[0][2]
         if ideasSort == 0:
             self.sort_method = self.sort_by_recommendation
@@ -277,10 +267,8 @@ class IdeasPage(Screen):
 
         self.history_list = query_all_recent_expiration_items()
 
-        # todo
+        # Sort the pantry by sort_method, passing parameter last_search if the last sort_method was sort_by_search
         self.sort_method() if self.sort_method != self.sort_by_search else self.sort_method(self.last_search)
-
-        # self.build_ideas_menu()
 
     # Clears all widgets currently in the scroll menu, and then adds all items currently in the history_list to the
     # scroll menu.
@@ -313,11 +301,11 @@ class IdeasPage(Screen):
         self.history_list = search_item(text, self.history_list, 1)
         self.build_ideas_menu()
 
-        # todo
         self.sort_method = self.sort_by_search
         self.last_search = text
 
-    # todo
+    # Sorts the pantry page by recommendation, by severity or reverse.
+    # Parameter button_press should be True when the function is called by a button press.
     def sort_by_recommendation(self, button_press=False):
 
         if button_press:
@@ -333,7 +321,8 @@ class IdeasPage(Screen):
 
         self.build_ideas_menu()
 
-    # TODO
+    # Sort the pantry page by produce title, ascending or descending.
+    # Parameter button_press should be True when the function is called by a button press.
     def sort_by_title(self, button_press=False):
         if button_press:
             if self.sort_method == self.sort_by_title:
@@ -350,8 +339,28 @@ class IdeasPage(Screen):
 
 
 class SettingsPage(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.default_settings = query_settings()[0]
+
     def on_enter(self, *args):
         self.ids.nav_bar.ids.settings_button.canvas.children[0].children[0].rgba = utils.get_color_from_hex('#385E3C')
+        self.default_settings = query_settings()[0]
+        self.set_panel(0)
+
+    # Sets the visible settings panel by adding the respective widget to the content_box.
+    # Parameter panel represents the settings panel that should be displayed.
+    # 0 -> PantrySettingsMenu;  1 -> IdeasSettingsMenu;  2 -> MiscSettingsMenu
+    def set_panel(self, panel):
+        content_box = self.ids.content_box
+        content_box.clear_widgets()
+
+        if panel == 0:
+            content_box.add_widget(PantrySettingsPanel(self.default_settings))
+        elif panel == 1:
+            content_box.add_widget(IdeasSettingsPanel())
+        elif panel == 2:
+            content_box.add_widget(MiscSettingsPanel())
 
 
 class AboutPage(Screen):
@@ -375,6 +384,18 @@ class PantryScrollMenu(ScrollView):
         new_menu_item = PantryMenuItem(name, time_remaining)
         self.ids.grid_layout.add_widget(new_menu_item)
 
+    def consume_all(self):
+        temp = list(self.ids.grid_layout.children)
+        temp.reverse()
+        for widget in temp:
+            widget.remove(True)
+
+    def expire_all(self):
+        temp = list(self.ids.grid_layout.children)
+        temp.reverse()
+        for widget in temp:
+            widget.remove(False)
+
 
 class PantryMenuItem(BoxLayout):
     def __init__(self, name, time_remaining, **kwargs):
@@ -392,19 +413,21 @@ class PantryMenuItem(BoxLayout):
     # remove the item.
     # Parameter args[0] is True if the used apple button is pressed, false if the expired apple button is
     # pressed.
+    # Parameter args[1] exists and is False if produce item is to be removed, but not factored into suggestions.
     # The pathing here is absolutely atrocious, but there is really no way around it.
     def remove(self, *args):
         calc_index = len(self.parent.children) - 1 - self.parent.children.index(self)  # index of self in produce_list
         holder = query_recent_expiration_item_by_name(
             self.parent.parent.parent.parent.produce_list[calc_index].itemName)
 
-        # Update item if it already exists within the expirations table
-        if len(holder) != 0:
-            update_recent_expirations_table(holder[0], args[0])
+        if len(args) < 2 or (len(args) > 1 and not args[1]):
+            # Update item if it already exists within the expirations table
+            if len(holder) != 0:
+                update_recent_expirations_table(holder[0], args[0])
 
-        # Otherwise, add the item to the table
-        else:
-            insert_recent_expirations_table(self.parent.parent.parent.parent.produce_list[calc_index], args[0])
+            # Otherwise, add the item to the table
+            else:
+                insert_recent_expirations_table(self.parent.parent.parent.parent.produce_list[calc_index], args[0])
 
         delete_user_item(self.parent.parent.parent.parent.produce_list[calc_index].id)
         self.parent.parent.parent.parent.produce_list.pop(calc_index)
@@ -476,6 +499,45 @@ class SearchBar(BoxLayout):
             self.parent.parent.parent.sort_by_search(text)
 
         self.parent.parent.parent.reset_title_bar()
+
+
+class PantrySettingsPanel(BoxLayout):
+    def __init__(self, defaults, **kwargs):
+        super().__init__(**kwargs)
+        self.defaults = list(defaults)
+
+        # Update default sort setting to display current default
+        if defaults[1] == 0:
+            self.ids.spinner.text = "Expiration (Ascending)"
+        elif defaults[1] == 1:
+            self.ids.spinner.text = "Expiration (Descending)"
+        elif defaults[1] == 2:
+            self.ids.spinner.text = "Title (Ascending)"
+        else:
+            self.ids.spinner.text = "Title (Descending)"
+
+    # Updates the default sort to the passed value from the default sort setting spinner. The settings
+    # database is updated with the new setting.
+    # Parameter text is a string that represents the text on the button in the spinner the use has selected.
+    def update_default_sort(self, text):
+        if text == "Expiration (Ascending)":
+            self.defaults[1] = 0
+        elif text == "Expiration (Descending)":
+            self.defaults[1] = 1
+        elif text == "Title (Ascending)":
+            self.defaults[1] = 2
+        else:
+            self.defaults[1] = 3
+
+        update_settings_table(tuple(self.defaults[1:]))
+
+
+class IdeasSettingsPanel(BoxLayout):
+    pass
+
+
+class MiscSettingsPanel(BoxLayout):
+    pass
 
 
 # ---------------------------------- Driver Functions ---------------------------------- #
