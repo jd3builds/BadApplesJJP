@@ -7,15 +7,15 @@ from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.scrollview import ScrollView
 from kivy import utils
 from kivy.config import Config
-from producetracker.utilities import *
-from producetracker.database import *
-from producetracker.matching import match_item
+from utilities import *
+from database import *
+from matching import match_single_item
 import os
 import os.path
 import kivy.resources
 from PIL import Image
 import pytesseract
-from producetracker.enhance import preprocess
+from enhance import preprocess
 
 kivy.require('1.11.1')
 Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
@@ -90,11 +90,29 @@ class PantryPage(Screen):
     # Sorts the produce_list in ascending order of expiration, unless sort=False. The scroll menu is then cleared, and
     # a new menu item is added to the scroll menu for each item in produce_list.
     def build_pantry_menu(self):
+        settings = query_settings()[0]
         self.ids.scroll_menu.ids.grid_layout.clear_widgets()
 
+        # Add each item into produce list, excluding (and removing from user_items and added to recent_expirations)
+        # those that have expired beyond the delete setting (or never if -1).
+        temp = []
         for item in self.produce_list:
-            self.ids.scroll_menu.add_to_menu(str(item.itemName), (
-                    str((dt.fromisoformat(item.expirationDate) - dt.today()).days + 1) + ' day(s)'))
+            days =  (dt.fromisoformat(item.expirationDate) - dt.today()).days + 1
+            if settings[6] == -1 or days > -settings[6]:
+                self.ids.scroll_menu.add_to_menu(str(item.itemName), (str(days) + ' day(s)'), settings[5])
+                temp.append(item)
+            # Delete item and add to recent_expirations
+            else:
+                delete_user_item(item.id)
+                holder = query_recent_expiration_item_by_name(item.itemName)
+
+                if len(holder) != 0: # Update item if it already exists within the expirations table
+                        update_recent_expirations_table(holder[0], False)
+                else:   # Otherwise, add the item to the table
+                        insert_recent_expirations_table(item, False)
+
+        self.produce_list = temp
+
 
     # Changes the text at the top of the screen back to the default title.
     def reset_title(self, *args):
@@ -129,7 +147,7 @@ class PantryPage(Screen):
         if text is None or len(text) == 0:
             return
 
-        match = match_item(text)
+        match = match_single_item(text) #TODO: Pablo is this correct? DO we need to use lvenshtein from matching?
         if match is not None:
             match_id = insert_user_table(match)
             self.produce_list.append(Produce(query_user_item_by_id(match_id)[0]))
@@ -137,7 +155,6 @@ class PantryPage(Screen):
             # Sort the pantry by sort_method, passing parameter last_search if the last sort_method was sort_by_search
             self.sort_method() if self.sort_method != self.sort_by_search else self.sort_method(self.last_search)
 
-            # self.build_pantry_menu()
             self.ids.title_text.text = 'Produce Added Successfully!'
             self.ids.title_text.color = utils.get_color_from_hex('#FFFFFF')
             Clock.schedule_once(self.parent.children[0].reset_title, 3)
@@ -211,20 +228,18 @@ class PantryPage(Screen):
 
         self.build_pantry_menu()
 
+    # Remove all pantry items, without updating ideas menu.
     def erase_all(self):
         self.produce_list.clear()
         delete_all_user_items()
 
+    # Remove all pantry items, as if consume button was pressed for each item.
     def consume_all(self):
         self.ids.scroll_menu.consume_all()
 
-        # access scroll menu
-        # for each .remove(True)
-
+    # Remove all pantry items, as if expire button was pressed for each item.
     def expire_all(self):
         self.ids.scroll_menu.expire_all()
-        # "
-        # .remove(False)
 
 
 class IdeasPage(Screen):
@@ -338,13 +353,18 @@ class IdeasPage(Screen):
 
         self.build_ideas_menu()
 
+    # Removes all entries from pantry menu and recent_expiration database.
+    def erase_all(self):
+        self.history_list.clear()
+        delete_all_recent_expiration_items()
+
 
 class SettingsPage(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.default_settings = query_settings()[0]
 
-    def on_enter(self, *args):
+    def on_pre_enter(self, *args):
         self.ids.nav_bar.ids.settings_button.canvas.children[0].children[0].rgba = utils.get_color_from_hex('#385E3C')
         self.default_settings = query_settings()[0]
         self.set_panel(0)
@@ -359,9 +379,9 @@ class SettingsPage(Screen):
         if panel == 0:
             content_box.add_widget(PantrySettingsPanel(self.default_settings))
         elif panel == 1:
-            content_box.add_widget(IdeasSettingsPanel())
+            content_box.add_widget(IdeasSettingsPanel(self.default_settings))
         elif panel == 2:
-            content_box.add_widget(MiscSettingsPanel())
+            content_box.add_widget(MiscSettingsPanel(self.default_settings))
 
 
 class AboutPage(Screen):
@@ -373,7 +393,24 @@ class InputPage(Screen):
 
     # Passes text in input box to consider_produce in pantry page.
     def text_entered(self):
-        self.parent.children[0].consider_produce(self.ids.produce_input.text.strip())
+        raw_input = self.ids.produce_input.text.strip()
+        inputs = raw_input.split(",") # separate by comma if possible
+
+        for input in inputs:
+            input = input.strip() # strip out any whitespace
+            left_p = input.find('(')
+            right_p = input.find(')')
+            quantity = 1
+
+            if left_p != -1 and right_p != -1:
+                if right_p == left_p + 1:
+                    quantity = 1
+                else:
+                    quantity = int(input[left_p+1:right_p]) # parse out the quantity
+                    input = input[:left_p]
+
+            for i in range(quantity):
+                self.parent.children[0].consider_produce(input)
 
 
 # ---------------------------------- Widget Classes ---------------------------------- #
@@ -381,8 +418,8 @@ class InputPage(Screen):
 class PantryScrollMenu(ScrollView):
 
     # Adds a PantryMenuItem, with the given name and time remaining, to the scroll menu.
-    def add_to_menu(self, name, time_remaining):
-        new_menu_item = PantryMenuItem(name, time_remaining)
+    def add_to_menu(self, name, time_remaining, threshold):
+        new_menu_item = PantryMenuItem(name, time_remaining, threshold)
         self.ids.grid_layout.add_widget(new_menu_item)
 
     def consume_all(self):
@@ -399,13 +436,13 @@ class PantryScrollMenu(ScrollView):
 
 
 class PantryMenuItem(BoxLayout):
-    def __init__(self, name, time_remaining, **kwargs):
+    def __init__(self, name, time_remaining, threshold, **kwargs):
         super().__init__(**kwargs)
         self.ids.produce_label.text = name
         self.ids.expiration_label.text = time_remaining
 
         # Change text color to red if the expiration is below threshold
-        if int(time_remaining.split()[0]) <= 3:
+        if int(time_remaining.split()[0]) <= threshold:
             self.ids.produce_label.color = utils.get_color_from_hex("#C40233")
             self.ids.expiration_label.color = utils.get_color_from_hex("#C40233")
 
@@ -506,8 +543,9 @@ class PantrySettingsPanel(BoxLayout):
     def __init__(self, defaults, **kwargs):
         super().__init__(**kwargs)
         self.defaults = list(defaults)
+        self.ids.threshold_slider.value = defaults[5]
 
-        # Update default sort setting to display current default
+        # Display default sort setting
         if defaults[1] == 0:
             self.ids.spinner.text = "Expiration (Ascending)"
         elif defaults[1] == 1:
@@ -516,6 +554,18 @@ class PantrySettingsPanel(BoxLayout):
             self.ids.spinner.text = "Title (Ascending)"
         else:
             self.ids.spinner.text = "Title (Descending)"
+
+        # Display default delete setting
+        if defaults[6] == -1:
+            self.ids.remove_spinner.text = 'Never'
+        elif defaults[6] == 0:
+            self.ids.remove_spinner.text = 'Immediately'
+        elif defaults[6] == 1:
+            self.ids.remove_spinner.text = 'After 1 Day'
+        elif defaults[6] == 3:
+            self.ids.remove_spinner.text = 'After 3 Days'
+        else:
+            self.ids.remove_spinner.text = 'After 5 Days'
 
     # Updates the default sort to the passed value from the default sort setting spinner. The settings
     # database is updated with the new setting.
@@ -532,13 +582,67 @@ class PantrySettingsPanel(BoxLayout):
 
         update_settings_table(tuple(self.defaults[1:]))
 
+    # Event function called when mouse released on settings panel.
+    def on_touch_up(self, *args):
+
+        # Update threshold slider values
+        slider_value = int(self.ids.threshold_slider.value)
+        if self.defaults[5] != slider_value:
+            self.defaults[5] = slider_value
+            update_settings_table(tuple(self.defaults[1:]))
+
+    # Updates the auto-deletion functionality to passed value.
+    # Parameter text is a string that represents the selected value.
+    def update_auto_delete(self, text):
+        if text == 'Never':
+            self.defaults[6] = -1
+        elif text == 'Immediately':
+            self.defaults[6] = 0
+        elif text == 'After 1 Day':
+            self.defaults[6] = 1
+        elif text == 'After 3 Days':
+            self.defaults[6] = 3
+        else:
+            self.defaults[6] = 5
+
+        update_settings_table(tuple(self.defaults[1:]))
+
 
 class IdeasSettingsPanel(BoxLayout):
-    pass
+    def __init__(self, defaults, **kwargs):
+        super().__init__(**kwargs)
+        self.defaults = list(defaults)
+
+        # Display default sort setting
+        if defaults[2] == 0:
+            self.ids.spinner.text = "Recommendation (Positive)"
+        elif defaults[2] == 1:
+            self.ids.spinner.text = "Recommendation (Negative)"
+        elif defaults[2] == 2:
+            self.ids.spinner.text = "Title (Ascending)"
+        else:
+            self.ids.spinner.text = "Title (Descending)"
+
+    # Updates the default sort to the passed value from the default sort setting spinner. The settings
+    # database is updated with the new setting.
+    # Parameter text is a string that represents the text on the button in the spinner the use has selected.
+    def update_default_sort(self, text):
+        if text == "Recommendation (Positive)":
+            self.defaults[2] = 0
+        elif text == "Recommendation (Negative)":
+            self.defaults[2] = 1
+        elif text == "Title (Ascending)":
+            self.defaults[2] = 2
+        else:
+            self.defaults[2] = 3
+
+        update_settings_table(tuple(self.defaults[1:]))
 
 
 class MiscSettingsPanel(BoxLayout):
-    pass
+    def __init__(self, defaults, **kwargs):
+        super().__init__(**kwargs)
+        self.defaults = list(defaults)
 
 
 # ---------------------------------- Driver Functions ---------------------------------- #

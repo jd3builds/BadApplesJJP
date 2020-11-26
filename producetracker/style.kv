@@ -292,18 +292,25 @@
     BoxLayout:
         orientation: 'horizontal'
         Label:
-            size_hint_x: .2
+            size_hint_x: .5
             text: "Sorting on Startup"
             color: "#000000"
-        Spinner:
-            id: spinner
-            size_hint_x: .6
-            text: 'TODO: initialize current selection here'
-            values: 'Expiration (Ascending)', 'Expiration (Descending)', 'Title (Ascending)', 'Title (Descending)'
-            background_normal: ''
-            background_color: utils.get_color_from_hex("#385E3C")
-            option_cls: Factory.get("ColoredSpinnerOption")
-            on_text: root.update_default_sort(self.text)
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint_x: .4
+            Label:
+                size_hint_y: .2
+            Spinner:
+                id: spinner
+                size_hint_y: .6
+                text: 'TODO: initialize current selection here'
+                values: 'Expiration (Ascending)', 'Expiration (Descending)', 'Title (Ascending)', 'Title (Descending)'
+                background_normal: ''
+                background_color: utils.get_color_from_hex("#385E3C")
+                option_cls: Factory.get("ColoredSpinnerOption")
+                on_text: root.update_default_sort(self.text)
+            Label:
+                size_hint_y: .2
 
         Label:
             size_hint_x: .2
@@ -312,51 +319,93 @@
     BoxLayout:
         orientation: 'horizontal'
         Label:
-            text: "Red Text Threshold              " + str(int(threshold_slider.value)) + " Days"
+            size_hint_x: .5
+            text: "Red Text Threshold:   " + str(int(threshold_slider.value)) + " days"
             color: utils.get_color_from_hex("#000501")
         Slider:
+            size_hint_x: .4
             id: threshold_slider
             min: 0
             max: 14
             step: 1
-            value_track_color: utils.get_color_from_hex("385E3C")
-
+            source: 'settings_icon.png'
+        Label:
+            size_hint_x: .2
 
     # Automatically Remove Setting
     BoxLayout:
         orientation: 'horizontal'
         Label:
+            size_hint_x: .5
             text: "Remove Items After Expiration"
             color: utils.get_color_from_hex("#000501")
-        Switch
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint_x: .4
+            Label:
+                size_hint_y: .2
+            Spinner:
+                id: remove_spinner
+                size_hint_y: .6
+                text: 'TODO: initialize current selection here'
+                values: 'Never', 'Immediately', 'After 1 Day', 'After 3 Days', 'After 5 Days'
+                background_normal: ''
+                background_color: utils.get_color_from_hex("#385E3C")
+                option_cls: Factory.get("ColoredSpinnerOption")
+                on_text: root.update_auto_delete(self.text)
+            Label:
+                size_hint_y: .2
+        Label:
+            size_hint_x: .2
 
     # Clear All Buttons
     BoxLayout:
         orientation: 'horizontal'
         Label:
             size_hint_x: .15
-        Button:
-            text: "Erase All"
-            background_normal: ''
-            background_color: utils.get_color_from_hex("#385E3C")
+        BoxLayout:
+            orientation: 'vertical'
             size_hint_x: .2167
-            on_release: root.parent.parent.parent.parent.ids.pantry_page.erase_all()
+            Label:
+                size_hint_y: .2
+            Button:
+                size_hint_y: .6
+                text: "Erase All"
+                background_normal: ''
+                background_color: utils.get_color_from_hex("#385E3C")
+                on_release: root.parent.parent.parent.parent.ids.pantry_page.erase_all()
+            Label:
+                size_hint_y: .2
         Label:
             size_hint_x: .025
-        Button:
-            text: "Consume All"
-            background_normal: ''
-            background_color: utils.get_color_from_hex("#385E3C")
+        BoxLayout:
+            orientation: 'vertical'
             size_hint_x: .2167
-            on_release: root.parent.parent.parent.parent.ids.pantry_page.consume_all()
+            Label:
+                size_hint_y: .2
+            Button:
+                size_hint_y: .6
+                text: "Consume All"
+                background_normal: ''
+                background_color: utils.get_color_from_hex("#385E3C")
+                on_release: root.parent.parent.parent.parent.ids.pantry_page.consume_all()
+            Label:
+                size_hint_y: .2
         Label:
             size_hint_x: .025
-        Button:
-            text: "Expire All"
-            background_normal: ''
-            background_color: utils.get_color_from_hex("#385E3C")
+        BoxLayout:
+            orientation: 'vertical'
             size_hint_x: .2167
-            on_release: root.parent.parent.parent.parent.ids.pantry_page.expire_all()
+            Label:
+                size_hint_y: .2
+            Button:
+                size_hint_y: .6
+                text: "Expire All"
+                background_normal: ''
+                background_color: utils.get_color_from_hex("#385E3C")
+                on_release: root.parent.parent.parent.parent.ids.pantry_page.expire_all()
+            Label:
+                size_hint_y: .2
         Label:
             size_hint_x: .15
 
@@ -364,15 +413,95 @@
 # Ideas Settings Panel
 <IdeasSettingsPanel@BoxLayout>:
     orientation: 'vertical'
-    Label:
-        text: "IDEAS SETTINGS"
+
+    Label
+
+    # Default Sort Setting
+    BoxLayout:
+        orientation: 'horizontal'
+        Label:
+            size_hint_x: .1
+        Label:
+            size_hint_x: .2
+            text: "Sorting on Startup"
+            color: "#000000"
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint_x: .2
+            Label:
+                size_hint_y: .2
+            Spinner:
+                id: spinner
+                size_hint_y: .6
+                text: 'TODO: initialize current selection here'
+                values: 'Recommendation (Positive)', 'Recommendation (Negative)', 'Title (Ascending)', 'Title (Descending)'
+                background_normal: ''
+                background_color: utils.get_color_from_hex("#385E3C")
+                option_cls: Factory.get("ColoredSpinnerOption")
+                on_text: root.update_default_sort(self.text)
+            Label:
+                size_hint_y: .2
+        Label:
+            size_hint_x: .1
+
+    # Erase All Button
+    BoxLayout:
+        orientation: 'horizontal'
+        Label:
+            size_hint_x: .4
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint_x: .2
+            Label:
+                size_hint_y: .2
+            Button:
+                size_hint_y: .6
+                text: "Clear All"
+                background_normal: ''
+                background_color: utils.get_color_from_hex("#385E3C")
+                on_release: root.parent.parent.parent.parent.ids.ideas_page.erase_all()
+            Label:
+                size_hint_y: .2
+        Label:
+            size_hint_x: .4
+
+    Label
 
 
 # Misc Settings Panel
 <MiscSettingsPanel@BoxLayout>:
     orientation: 'vertical'
+
     Label:
-        text: "MISC SETTINGS"
+        size_hint_y: .05
+
+    # Color picker
+    BoxLayout:
+        orientation: 'horizontal'
+        size_hint_y: .7
+        Label:
+            size_hint_x: .1
+        ColorPicker:
+            size_hint_x: .9
+
+    Label:
+        size_hint_y: .05
+
+    # Application buttons
+    BoxLayout:
+        orientation: 'horizontal'
+        size_hint_y: .1
+        Button:
+            text: 'Set as Primary'
+        Button:
+            text: 'Set as Secondary'
+        Button:
+            text: 'Set at Highlight'
+
+    # Reset to defaults button
+    Button:
+        size_hint_y: .1
+        text: 'Reset to Defaults'
 
 
 # Custom Spinner Options
@@ -380,6 +509,7 @@
 # the spinner options to have the below color.
 <ColoredSpinnerOption@SpinnerOption>:
     background_color: utils.get_color_from_hex("#99D19C")
+
 
 #################### Pages  ####################
 
@@ -389,6 +519,7 @@ Manager:
     PantryPage:
         id: pantry_page
     IdeasPage:
+        id: ideas_page
     SettingsPage:
     AboutPage:
     InputPage:
@@ -753,61 +884,8 @@ Manager:
             id: content_box
             size_hint_y: .69
 
-
         Label:
             size_hint_y: .01
-
-
-#        # Ideas Settings Label
-#        Label:
-#            size_hint_y: .05
-#            text: 'Ideas'
-#            color: utils.get_color_from_hex("#000501")
-#            underline: True
-#            font_size: 18
-#
-#        # Default Sort Setting
-#        BoxLayout:
-#            orientation:
-#            size_hint_y: .075
-#            Label:
-#                text: "Default Sort"
-#                color: utils.get_color_from_hex("#000501")
-#            CheckBox:
-#                color:  utils.get_color_from_hex("#000000")
-#                group:  "ideas_default_sort"
-#            CheckBox:
-#                color:  utils.get_color_from_hex("#000000")
-#                group:  "ideas_default_sort"
-#            CheckBox:
-#                color:  utils.get_color_from_hex("#000000")
-#                group:  "ideas_default_sort"
-#            CheckBox:
-#                color:  utils.get_color_from_hex("#000000")
-#                group:  "ideas_default_sort"
-#
-#        # Clear All Button
-#        BoxLayout:
-#            size_hint_y: .075
-#            orientation: 'horizontal'
-#            Button:
-#                text: "Clear All"
-#
-#        # Misc Settings Label
-#        Label:
-#            size_hint_y: .05
-#            text: 'Miscellaneous'
-#            color: utils.get_color_from_hex("#000501")
-#            underline: True
-#            font_size: 18
-#
-#        # Color Pickers
-#        BoxLayout:
-#            orientation: 'horizontal'
-#            size_hint_y: .2
-#            Button
-#            Button
-#            ColorPicker
 
         # Navigation Bar
         ButtonBar:

@@ -158,7 +158,8 @@ def create_settings_table():
                                     ideaSort integer,
                                     primaryColor varchar,
                                     secondaryColor varchar,
-                                    redThreshold integer
+                                    redThreshold integer,
+                                    autoDelete  integer
                                 );"""
 
     connection = create_connection("useritems.db")
@@ -306,11 +307,11 @@ def insert_recent_expirations_table(recent_exp, use):
 
 
 def insert_settings_table():
-    sql_insert_settings_table = """INSERT INTO settings (id, pantrySort, ideaSort, primaryColor, secondaryColor, redThreshold) VALUES(?, ?, ?, ?, ?, ?)"""
+    sql_insert_settings_table = """INSERT INTO settings (id, pantrySort, ideaSort, primaryColor, secondaryColor, redThreshold, autoDelete) VALUES(?, ?, ?, ?, ?, ?, ?)"""
 
     connection = create_connection("useritems.db")
 
-    settings = [1, 0, 0, '#99D19C', '#73AB84', 3]
+    settings = [1, 0, 0, '#99D19C', '#73AB84', 3, -1]
 
     if connection is not None:
         return True if execute_sql(connection, sql_insert_settings_table, settings, 3) is not None else False
@@ -445,7 +446,8 @@ def update_settings_table(new_settings):
                                         ideaSort = ?,
                                         primaryColor = ?,
                                         secondaryColor = ?,
-                                        redThreshold = ?
+                                        redThreshold = ?,
+                                        autoDelete = ?
                                     WHERE id = 1
                                     """
 
@@ -698,6 +700,13 @@ def search_item(raw_item, item_list, name_index):
 
 if __name__ == "__main__":
     print(":)")
-    create_settings_table()
-    insert_settings_table()
-    #update_settings_table([0, None, None, None])
+    #create_settings_table()
+    #insert_settings_table()
+    # item2 = ["randoo", 91, 0, 0, 0, False, -1, 7, "days" ]
+    # item3 = ["randooo", 92, 0, 0, 0, False, 0, 7, "days" ]
+
+    #insert_user_table(item2)
+    #insert_user_table(item3)
+
+    for i in range(-3,3):
+        insert_user_table(["r"+str(i), 92, 0, 0, 0, False, i, 7, "days" ])
