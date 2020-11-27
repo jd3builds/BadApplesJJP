@@ -159,7 +159,8 @@ def create_settings_table():
                                     primaryColor varchar,
                                     secondaryColor varchar,
                                     redThreshold integer,
-                                    autoDelete  integer
+                                    autoDelete  integer,
+                                    highlightColor varchar
                                 );"""
 
     connection = create_connection("useritems.db")
@@ -195,13 +196,13 @@ def insert_user_table(item):
     normal_days = 0
 
     if item[8] == 'Days' or item[8] == 'days':
-        normal_days = item[6]
+        normal_days = (item[6] + item[7]) / 2
     elif item[8] == 'Weeks' or item[8] == 'weeks':
-        normal_days = item[6] * 7
+        normal_days = (item[6] + item[7]) * 7 / 2
     elif item[8] == 'Months' or item[8] == 'months':
-        normal_days = item[6] * 30
+        normal_days = (item[6] + item[7]) * 30 / 2
     elif item[8] == 'Years' or item[8] == 'years':
-        normal_days = item[6] * 365
+        normal_days = (item[6] + item[7]) * 365 / 2
 
     expirationDate = date.today() + timedelta(days=normal_days)
     item = list(item)
@@ -307,11 +308,11 @@ def insert_recent_expirations_table(recent_exp, use):
 
 
 def insert_settings_table():
-    sql_insert_settings_table = """INSERT INTO settings (id, pantrySort, ideaSort, primaryColor, secondaryColor, redThreshold, autoDelete) VALUES(?, ?, ?, ?, ?, ?, ?)"""
+    sql_insert_settings_table = """INSERT INTO settings (id, pantrySort, ideaSort, primaryColor, secondaryColor, redThreshold, autoDelete, highlightColor) VALUES(?, ?, ?, ?, ?, ?, ?, ?)"""
 
     connection = create_connection("useritems.db")
 
-    settings = [1, 0, 0, '#99D19C', '#73AB84', 3, -1]
+    settings = [1, 0, 0, '#99D19C', '#73AB84', 3, -1, '#385E3C']
 
     if connection is not None:
         return True if execute_sql(connection, sql_insert_settings_table, settings, 3) is not None else False
@@ -447,7 +448,8 @@ def update_settings_table(new_settings):
                                         primaryColor = ?,
                                         secondaryColor = ?,
                                         redThreshold = ?,
-                                        autoDelete = ?
+                                        autoDelete = ?,
+                                        highlightColor = ?
                                     WHERE id = 1
                                     """
 
@@ -700,13 +702,13 @@ def search_item(raw_item, item_list, name_index):
 
 if __name__ == "__main__":
     print(":)")
-    #create_settings_table()
-    #insert_settings_table()
+    # create_settings_table()
+    # insert_settings_table()
     # item2 = ["randoo", 91, 0, 0, 0, False, -1, 7, "days" ]
     # item3 = ["randooo", 92, 0, 0, 0, False, 0, 7, "days" ]
 
     #insert_user_table(item2)
     #insert_user_table(item3)
 
-    for i in range(-3,3):
-        insert_user_table(["r"+str(i), 92, 0, 0, 0, False, i, 7, "days" ])
+    # for i in range(-3,3):
+    #    insert_user_table(["r"+str(i), 92, 0, 0, 0, False, i, 7, "days" ])

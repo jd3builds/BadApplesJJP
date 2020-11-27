@@ -5,6 +5,7 @@ from kivy.lang import Builder
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.scrollview import ScrollView
+from kivy.uix.popup import Popup
 from kivy import utils
 from kivy.config import Config
 from utilities import *
@@ -78,7 +79,17 @@ class PantryPage(Screen):
 
     # Event function called just before pantry page is entered.
     def on_pre_enter(self, *args):
-        self.ids.nav_bar.ids.pantry_button.canvas.children[0].children[0].rgba = utils.get_color_from_hex('#385E3C')
+        self.defaults = query_settings()[0]
+
+        # Set colors
+        self.canvas.children[0].children[2].rgba = utils.get_color_from_hex(self.defaults[3])  # background
+        self.ids.title_bar.canvas.children[0].children[0].rgba = utils.get_color_from_hex(self.defaults[4])  # title bar
+        self.ids.search_button.canvas.children[0].children[0].rgba = utils.get_color_from_hex(self.defaults[4]) # search button
+        self.ids.title_sort_button.canvas.children[0].children[0].rgba = utils.get_color_from_hex(self.defaults[4]) # title_sort button
+        self.ids.exp_sort_button.canvas.children[0].children[0].rgba = utils.get_color_from_hex(self.defaults[4]) # exp_sort button
+        for widget in self.ids.nav_bar.children:  # button bar
+            widget.canvas.children[0].children[0].rgba = utils.get_color_from_hex(self.defaults[4])
+        self.ids.nav_bar.ids.pantry_button.canvas.children[0].children[0].rgba = utils.get_color_from_hex(self.defaults[7])  # pantry button
 
         # Reset title bar if search bar is on screen
         if type(self.ids.title_bar.children[0]) == SearchBar:
@@ -147,7 +158,7 @@ class PantryPage(Screen):
         if text is None or len(text) == 0:
             return
 
-        match = match_single_item(text) #TODO: Pablo is this correct? DO we need to use lvenshtein from matching?
+        match = match_single_item(text)
         if match is not None:
             match_id = insert_user_table(match)
             self.produce_list.append(Produce(query_user_item_by_id(match_id)[0]))
@@ -252,9 +263,10 @@ class IdeasPage(Screen):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.defaults = query_settings()[0]
 
         # Queries the database for the default sort setting
-        ideasSort = query_settings()[0][2]
+        ideasSort = self.defaults[2]
         if ideasSort == 0:
             self.sort_method = self.sort_by_recommendation
             self.rec_sort_ascend = True
@@ -275,7 +287,21 @@ class IdeasPage(Screen):
     # Event function called when user navigates to ideas page. Clears all of the menu items from history_list and
     # the scroll menu. All recent expirations are then queried from the database and added to the scroll menu.
     def on_pre_enter(self, *args):
-        self.ids.nav_bar.ids.ideas_button.canvas.children[0].children[0].rgba = utils.get_color_from_hex('#385E3C')
+
+        self.defaults = query_settings()[0]
+
+        # Set colors
+        self.canvas.children[0].children[2].rgba = utils.get_color_from_hex(self.defaults[3])  # background
+        self.ids.title_bar.canvas.children[0].children[0].rgba = utils.get_color_from_hex(self.defaults[4])  # title bar
+        self.ids.search_button.canvas.children[0].children[0].rgba = utils.get_color_from_hex(
+            self.defaults[4])  # search button
+        self.ids.title_sort_button.canvas.children[0].children[0].rgba = utils.get_color_from_hex(
+            self.defaults[4])  # title_sort button
+        self.ids.rec_sort_button.canvas.children[0].children[0].rgba = utils.get_color_from_hex(
+            self.defaults[4])  # rec_sort button
+        for widget in self.ids.nav_bar.children:  # button bar
+            widget.canvas.children[0].children[0].rgba = utils.get_color_from_hex(self.defaults[4])
+        self.ids.nav_bar.ids.ideas_button.canvas.children[0].children[0].rgba = utils.get_color_from_hex(self.defaults[7])  # ideas button
 
         # Reset title bar if search bar is on screen
         if type(self.ids.title_bar.children[0]) == SearchBar:
@@ -360,13 +386,25 @@ class IdeasPage(Screen):
 
 
 class SettingsPage(Screen):
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.default_settings = query_settings()[0]
 
     def on_pre_enter(self, *args):
-        self.ids.nav_bar.ids.settings_button.canvas.children[0].children[0].rgba = utils.get_color_from_hex('#385E3C')
         self.default_settings = query_settings()[0]
+
+        # Set colors
+        self.ids.title_bar.canvas.children[0].children[0].rgba = utils.get_color_from_hex(self.default_settings[4])  # title bar
+        self.canvas.children[0].children[2].rgba = utils.get_color_from_hex(self.default_settings[3])  # background
+        for widget in self.ids.nav_bar.children:  # button bar
+            widget.canvas.children[0].children[0].rgba = utils.get_color_from_hex(self.default_settings[4])
+        self.ids.nav_bar.ids.settings_button.canvas.children[0].children[0].rgba = utils.get_color_from_hex(
+            self.default_settings[7])  # settings button
+        self.ids.pantry_settings_button.canvas.children[0].rgba = utils.get_color_from_hex(self.default_settings[4]) # pantry_settings button
+        self.ids.ideas_settings_button.canvas.children[0].rgba = utils.get_color_from_hex(self.default_settings[4]) # ideas_settings button
+        self.ids.misc_settings_button.canvas.children[0].rgba = utils.get_color_from_hex(self.default_settings[4]) # misc_settings button
+
         self.set_panel(0)
 
     # Sets the visible settings panel by adding the respective widget to the content_box.
@@ -375,6 +413,8 @@ class SettingsPage(Screen):
     def set_panel(self, panel):
         content_box = self.ids.content_box
         content_box.clear_widgets()
+
+        self.default_settings = query_settings()[0]
 
         if panel == 0:
             content_box.add_widget(PantrySettingsPanel(self.default_settings))
@@ -385,11 +425,31 @@ class SettingsPage(Screen):
 
 
 class AboutPage(Screen):
-    def on_enter(self, *args):
-        self.ids.nav_bar.ids.about_button.canvas.children[0].children[0].rgba = utils.get_color_from_hex('#385E3C')
 
+    def on_pre_enter(self, *args):
+        self.defaults = query_settings()[0]
+        self.canvas.children[0].children[2].rgba = utils.get_color_from_hex(self.defaults[3]) # background
+        self.ids.title_bar.canvas.children[0].children[0].rgba = utils.get_color_from_hex(self.defaults[4]) # title bar
+        for widget in self.ids.nav_bar.children: # button bar
+            widget.canvas.children[0].children[0].rgba = utils.get_color_from_hex(self.defaults[4])
+        self.ids.nav_bar.ids.about_button.canvas.children[0].children[0].rgba = utils.get_color_from_hex(self.defaults[7])  # about button
+
+    # TODO delete
+    def test(self):
+        popup = OptionsPopup(self.defaults, ['1', '2', '3'])
+        popup.open()
 
 class InputPage(Screen):
+
+    def on_pre_enter(self):
+        self.defaults = query_settings()[0]
+
+        # Set colors
+        self.ids.title_bar.canvas.children[0].children[0].rgba = utils.get_color_from_hex(self.defaults[4]) # title bar
+        self.canvas.children[0].children[2].rgba = utils.get_color_from_hex(self.defaults[3])  # background
+        for widget in self.ids.button_bar.children:  # button bar
+            widget.canvas.children[0].children[0].rgba = utils.get_color_from_hex(self.defaults[4])
+
 
     # Passes text in input box to consider_produce in pantry page.
     def text_entered(self):
@@ -540,6 +600,7 @@ class SearchBar(BoxLayout):
 
 
 class PantrySettingsPanel(BoxLayout):
+
     def __init__(self, defaults, **kwargs):
         super().__init__(**kwargs)
         self.defaults = list(defaults)
@@ -566,6 +627,15 @@ class PantrySettingsPanel(BoxLayout):
             self.ids.remove_spinner.text = 'After 3 Days'
         else:
             self.ids.remove_spinner.text = 'After 5 Days'
+
+        # Set colors
+        self.ids.erase_all_button.background_color = utils.get_color_from_hex(self.defaults[7]) # erase_all button
+        self.ids.consume_all_button.background_color = utils.get_color_from_hex(self.defaults[7]) # consume_all button
+        self.ids.expire_all_button.background_color = utils.get_color_from_hex(self.defaults[7]) # expire_all button
+        self.ids.spinner.option_cls.background_color = utils.get_color_from_hex(self.defaults[4]) # spinner option color
+        self.ids.spinner.background_color = utils.get_color_from_hex(self.defaults[7]) # default_sorting spinner
+        self.ids.remove_spinner.background_color = utils.get_color_from_hex(self.defaults[7]) # auto_remove spinner
+
 
     # Updates the default sort to the passed value from the default sort setting spinner. The settings
     # database is updated with the new setting.
@@ -643,6 +713,58 @@ class MiscSettingsPanel(BoxLayout):
     def __init__(self, defaults, **kwargs):
         super().__init__(**kwargs)
         self.defaults = list(defaults)
+
+    def update_primary_color(self):
+        curr = self.defaults
+        curr[3] = str(self.ids.color_picker.hex_color)
+        curr = tuple(curr[1:])
+        update_settings_table(curr)
+
+    def update_secondary_color(self):
+        curr = self.defaults
+        curr[4] = str(self.ids.color_picker.hex_color)
+        curr = tuple(curr[1:])
+        update_settings_table(curr)
+
+
+    def update_highlight_color(self):
+        curr = self.defaults
+        curr[7] = str(self.ids.color_picker.hex_color)
+        curr = tuple(curr[1:])
+        update_settings_table(curr)
+
+    def set_default_colors(self):
+        self.defaults[3] = '#99d19c'
+        self.defaults[4] = '#73AB84'
+        self.defaults[7] = '#385E3C'
+        update_settings_table(tuple(self.defaults[1:]))
+
+
+# Popup that allows users to choose between three options.
+# Parameter defaults is a tuple of the default settings.
+# Parameter options is a list of strings that will become the button labels of the three options.
+class OptionsPopup(Popup):
+    def __init__(self, defaults, options, **kwargs):
+        super().__init__(**kwargs)
+        self.defaults = list(defaults)
+
+        # Set colors
+        self.background_color = utils.get_color_from_hex(self.defaults[3])
+        self.ids.option_a.background_color = utils.get_color_from_hex(self.defaults[7])
+        self.ids.option_b.background_color = utils.get_color_from_hex(self.defaults[7])
+        self.ids.option_c.background_color = utils.get_color_from_hex(self.defaults[7])
+        self.ids.cancel_button.background_color = utils.get_color_from_hex(self.defaults[7])
+
+        # Set options text
+        self.ids.option_a.text = options[0]
+        self.ids.option_b.text = options[1]
+        self.ids.option_c.text = options[2]
+
+    def option_selected(self):
+        print(self.parent.parent.children[1].children[0]) # this is the path to about page, need to change to pantry page
+        # TODO pass option to relevant functions here
+
+
 
 
 # ---------------------------------- Driver Functions ---------------------------------- #

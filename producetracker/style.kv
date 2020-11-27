@@ -369,6 +369,7 @@
             Label:
                 size_hint_y: .2
             Button:
+                id: erase_all_button
                 size_hint_y: .6
                 text: "Erase All"
                 background_normal: ''
@@ -384,6 +385,7 @@
             Label:
                 size_hint_y: .2
             Button:
+                id: consume_all_button
                 size_hint_y: .6
                 text: "Consume All"
                 background_normal: ''
@@ -399,6 +401,7 @@
             Label:
                 size_hint_y: .2
             Button:
+                id: expire_all_button
                 size_hint_y: .6
                 text: "Expire All"
                 background_normal: ''
@@ -482,6 +485,7 @@
         Label:
             size_hint_x: .1
         ColorPicker:
+            id: color_picker
             size_hint_x: .9
 
     Label:
@@ -493,15 +497,19 @@
         size_hint_y: .1
         Button:
             text: 'Set as Primary'
+            on_release: root.update_primary_color()
         Button:
             text: 'Set as Secondary'
+            on_release: root.update_secondary_color()
         Button:
             text: 'Set at Highlight'
+            on_release: root.update_highlight_color()
 
     # Reset to defaults button
     Button:
         size_hint_y: .1
         text: 'Reset to Defaults'
+        on_release: root.set_default_colors()
 
 
 # Custom Spinner Options
@@ -509,6 +517,59 @@
 # the spinner options to have the below color.
 <ColoredSpinnerOption@SpinnerOption>:
     background_color: utils.get_color_from_hex("#99D19C")
+
+
+# Popup used by user to select correct produce item
+<OptionsPopup@Popup>:
+    auto_dismiss: False
+    title: 'Select Intended Item'
+    title_align: 'center'
+    size_hint_x: .5
+    size_hint_y: .5
+    background_color: utils.get_color_from_hex("#99D19C")
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            size_hint_y: 1
+        Button:
+            id: option_a
+            size_hint_y: 4
+            background_normal: ''
+            background_color: utils.get_color_from_hex("#385E3C")
+            text: 'Option A'
+            on_release: root.option_selected()
+            on_release: root.dismiss()
+        Label:
+            size_hint_y: 1
+        Button:
+            id: option_b
+            size_hint_y: 4
+            background_normal: ''
+            background_color: utils.get_color_from_hex("#385E3C")
+            text: 'Option B'
+            on_release: root.option_selected()
+            on_release: root.dismiss()
+        Label:
+            size_hint_y: 1
+        Button:
+            id: option_c
+            size_hint_y: 4
+            background_normal: ''
+            background_color: utils.get_color_from_hex("#385E3C")
+            text: 'Option C'
+            on_release: root.option_selected()
+            on_release: root.dismiss()
+        Label:
+            size_hint_y: 1
+        Button:
+            id: cancel_button
+            size_hint_y: 4
+            background_normal: ''
+            background_color: utils.get_color_from_hex("#385E3C")
+            text: 'Cancel'
+            on_release: root.dismiss()
+        Label:
+            size_hint_y: .5
 
 
 #################### Pages  ####################
@@ -606,6 +667,7 @@ Manager:
 
             # Display Search Button
             BoxLayout:
+                id: search_button
                 orientation: 'vertical'
                 size_hint_x: .1
                 canvas.before:
@@ -620,6 +682,7 @@ Manager:
 
             # Title Sort Button
             BoxLayout:
+                id: title_sort_button
                 orientation: 'vertical'
                 size_hint_x: .1
                 canvas.before:
@@ -634,6 +697,7 @@ Manager:
 
             # Expiration Sort Button
             BoxLayout:
+                id: exp_sort_button
                 orientation: 'vertical'
                 size_hint_x: .1
                 canvas.before:
@@ -731,6 +795,7 @@ Manager:
 
             # Display Search Button
             BoxLayout:
+                id: search_button
                 orientation: 'vertical'
                 size_hint_x: .1
                 canvas.before:
@@ -745,6 +810,7 @@ Manager:
 
             # Sort By Title Button
             BoxLayout:
+                id: title_sort_button
                 orientation: 'vertical'
                 size_hint_x: .1
                 canvas.before:
@@ -759,6 +825,7 @@ Manager:
 
             # Sort By Recommendation Button
             BoxLayout:
+                id: rec_sort_button
                 orientation: 'vertical'
                 size_hint_x: .1
                 canvas.before:
@@ -842,6 +909,7 @@ Manager:
 
         # Title Bar
         Label:
+            id: title_bar
             text: 'Settings'
             color: utils.get_color_from_hex("#000501")
             size_hint_y: .1
@@ -861,16 +929,19 @@ Manager:
             orientation: 'horizontal'
             size_hint_y: .08
             Button:
+                id: pantry_settings_button
                 text: 'Pantry Page'
                 background_color: utils.get_color_from_hex("#73AB84")
                 font_size: 16
                 on_release: root.set_panel(0)
             Button:
+                id: ideas_settings_button
                 text: 'Ideas Page'
                 background_color: utils.get_color_from_hex("#73AB84")
                 font_size: 16
                 on_release: root.set_panel(1)
             Button:
+                id: misc_settings_button
                 text: 'Miscellaneous'
                 background_color: utils.get_color_from_hex("#73AB84")
                 font_size: 16
@@ -909,6 +980,7 @@ Manager:
 
         # Title Bar
         Label:
+            id: title_bar
             text: 'About'
             color: utils.get_color_from_hex("#000501")
             size_hint_y: .1
@@ -919,6 +991,11 @@ Manager:
                 Rectangle:
                     size: self.size
                     pos: self.pos
+
+        # TODO (delete)
+        Button:
+            text: 'test'
+            on_release: root.test()
 
         # Content
         Label:
@@ -949,6 +1026,7 @@ Manager:
 
         # Title Bar
         Label:
+            id: title_bar
             text: 'Manual Input'
             color: utils.get_color_from_hex("#000501")
             size_hint_y: .1
@@ -987,6 +1065,7 @@ Manager:
 
         # Button Bar
         BoxLayout:
+            id: button_bar
             orientation: 'horizontal'
             size_hint_y: .15
 
