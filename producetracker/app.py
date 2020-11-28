@@ -10,13 +10,14 @@ from kivy import utils
 from kivy.config import Config
 from utilities import *
 from database import *
-from matching import match_single_item
+from matching import *
 import os
 import os.path
 import kivy.resources
 from PIL import Image
 import pytesseract
 from enhance import preprocess
+from collections import deque
 
 kivy.require('1.11.1')
 Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
@@ -45,6 +46,7 @@ class LandingPage(Screen):
 class PantryPage(Screen):
     produce_list = []  # list of type Produce, containing all items from useritems.db
     title_widgets = []  # list of all default title bar widgets
+    matchs_queue = deque()
 
     # Sorting variables
     sort_method = None  # sort function most recently called (or default)
@@ -156,24 +158,34 @@ class PantryPage(Screen):
     # Parameter text is a candidate for a produce item.
     def consider_produce(self, text):
         if text is None or len(text) == 0:
-            return
-
-        match = match_single_item(text)
-        if match is not None:
-            match_id = insert_user_table(match)
-            self.produce_list.append(Produce(query_user_item_by_id(match_id)[0]))
-
-            # Sort the pantry by sort_method, passing parameter last_search if the last sort_method was sort_by_search
-            self.sort_method() if self.sort_method != self.sort_by_search else self.sort_method(self.last_search)
-
-            self.ids.title_text.text = 'Produce Added Successfully!'
-            self.ids.title_text.color = utils.get_color_from_hex('#FFFFFF')
-            Clock.schedule_once(self.parent.children[0].reset_title, 3)
-
-        else:
             self.ids.title_text.text = 'Failed to Add Produce!'
             self.ids.title_text.color = utils.get_color_from_hex('#FFFFFF')
             Clock.schedule_once(self.parent.children[0].reset_title, 3)
+
+        # Call the new function gives three closest
+        # If best about some threshold add it
+        # Otherwise, popup window w/ three
+
+        matchs = match_multiple_items(text)
+        self.matchs_queue.append(matchs)
+        upper_thresh = matchs[-1][-1]
+        if upper_thresh < 1000:
+            popup = OptionsPopup(self.defaults, [matchs[0][0][0], matchs[1][0][0], matchs[2][0][0]])
+            popup.open()
+        else:
+            self.insert_produce(matchs[-1][0])
+
+    def insert_produce(self, match):
+        match_id = insert_user_table(match)
+        self.produce_list.append(Produce(query_user_item_by_id(match_id)[0]))
+
+        # Sort the pantry by sort_method, passing parameter last_search if the last sort_method was sort_by_search
+        self.sort_method() if self.sort_method != self.sort_by_search else self.sort_method(
+            self.last_search)
+
+        self.ids.title_text.text = 'Produce Added Successfully!'
+        self.ids.title_text.color = utils.get_color_from_hex('#FFFFFF')
+        Clock.schedule_once(self.parent.children[0].reset_title, 3)
 
     # Displays search box
     def display_search(self):
@@ -389,7 +401,6 @@ class SettingsPage(Screen):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.default_settings = query_settings()[0]
 
     def on_pre_enter(self, *args):
         self.default_settings = query_settings()[0]
@@ -434,10 +445,6 @@ class AboutPage(Screen):
             widget.canvas.children[0].children[0].rgba = utils.get_color_from_hex(self.defaults[4])
         self.ids.nav_bar.ids.about_button.canvas.children[0].children[0].rgba = utils.get_color_from_hex(self.defaults[7])  # about button
 
-    # TODO delete
-    def test(self):
-        popup = OptionsPopup(self.defaults, ['1', '2', '3'])
-        popup.open()
 
 class InputPage(Screen):
 
@@ -454,6 +461,10 @@ class InputPage(Screen):
     # Passes text in input box to consider_produce in pantry page.
     def text_entered(self):
         raw_input = self.ids.produce_input.text.strip()
+
+        if len(raw_input) == 0:
+            return
+
         inputs = raw_input.split(",") # separate by comma if possible
 
         for input in inputs:
@@ -693,6 +704,11 @@ class IdeasSettingsPanel(BoxLayout):
         else:
             self.ids.spinner.text = "Title (Descending)"
 
+        # Set colors
+        self.ids.spinner.background_color = utils.get_color_from_hex(self.defaults[7]) # default_sorting spinner
+        self.ids.erase_all_button.background_color = utils.get_color_from_hex(self.defaults[7]) # erase_all button
+        self.ids.spinner.option_cls.background_color = utils.get_color_from_hex(self.defaults[4]) # spinner option color
+
     # Updates the default sort to the passed value from the default sort setting spinner. The settings
     # database is updated with the new setting.
     # Parameter text is a string that represents the text on the button in the spinner the use has selected.
@@ -714,30 +730,76 @@ class MiscSettingsPanel(BoxLayout):
         super().__init__(**kwargs)
         self.defaults = list(defaults)
 
+        # Set colors
+        self.ids.primary_button.background_color = utils.get_color_from_hex(self.defaults[7])
+        self.ids.secondary_button.background_color = utils.get_color_from_hex(self.defaults[7])
+        self.ids.highlight_button.background_color = utils.get_color_from_hex(self.defaults[7])
+        self.ids.reset_button.background_color = utils.get_color_from_hex(self.defaults[7])
+
     def update_primary_color(self):
-        curr = self.defaults
-        curr[3] = str(self.ids.color_picker.hex_color)
-        curr = tuple(curr[1:])
-        update_settings_table(curr)
+        self.defaults[3] = str(self.ids.color_picker.hex_color)
+        update_settings_table(tuple(self.defaults[1:]))
+
+        # Update relevant SettingsPage colors
+        self.parent.parent.parent.canvas.children[0].children[2].rgba = utils.get_color_from_hex(self.defaults[3])  # background
+
 
     def update_secondary_color(self):
-        curr = self.defaults
-        curr[4] = str(self.ids.color_picker.hex_color)
-        curr = tuple(curr[1:])
-        update_settings_table(curr)
+        self.defaults[4] = str(self.ids.color_picker.hex_color)
+        update_settings_table(tuple(self.defaults[1:]))
+
+        # Update relevant SettingsPage colors
+        self.parent.parent.parent.ids.title_bar.canvas.children[0].children[0].rgba = utils.get_color_from_hex(
+            self.defaults[4])  # title bar
+        for widget in self.parent.parent.parent.ids.nav_bar.children:  # button bar
+            widget.canvas.children[0].children[0].rgba = utils.get_color_from_hex(self.defaults[4])
+        self.parent.parent.parent.ids.pantry_settings_button.canvas.children[0].rgba = utils.get_color_from_hex(
+            self.defaults[4])  # pantry_settings button
+        self.parent.parent.parent.ids.ideas_settings_button.canvas.children[0].rgba = utils.get_color_from_hex(
+            self.defaults[4])  # ideas_settings button
+        self.parent.parent.parent.ids.misc_settings_button.canvas.children[0].rgba = utils.get_color_from_hex(
+            self.defaults[4])  # misc_settings button
 
 
     def update_highlight_color(self):
-        curr = self.defaults
-        curr[7] = str(self.ids.color_picker.hex_color)
-        curr = tuple(curr[1:])
-        update_settings_table(curr)
+        self.defaults[7] = str(self.ids.color_picker.hex_color)
+        update_settings_table(tuple(self.defaults[1:]))
+
+        # Update relevant SettingsPage colors
+        self.parent.parent.parent.ids.nav_bar.ids.settings_button.canvas.children[0].children[0].rgba = utils.get_color_from_hex(self.defaults[7])  # settings button
+
+        # Update MiscPanel colors
+        self.ids.primary_button.background_color = utils.get_color_from_hex(self.defaults[7])
+        self.ids.secondary_button.background_color = utils.get_color_from_hex(self.defaults[7])
+        self.ids.highlight_button.background_color = utils.get_color_from_hex(self.defaults[7])
+        self.ids.reset_button.background_color = utils.get_color_from_hex(self.defaults[7])
 
     def set_default_colors(self):
         self.defaults[3] = '#99d19c'
         self.defaults[4] = '#73AB84'
         self.defaults[7] = '#385E3C'
         update_settings_table(tuple(self.defaults[1:]))
+
+        # Update SettingsPage colors
+        self.parent.parent.parent.ids.title_bar.canvas.children[0].children[0].rgba = utils.get_color_from_hex(
+            self.defaults[4])  # title bar
+        for widget in self.parent.parent.parent.ids.nav_bar.children:  # button bar
+            widget.canvas.children[0].children[0].rgba = utils.get_color_from_hex(self.defaults[4])
+        self.parent.parent.parent.ids.pantry_settings_button.canvas.children[0].rgba = utils.get_color_from_hex(
+            self.defaults[4])  # pantry_settings button
+        self.parent.parent.parent.ids.ideas_settings_button.canvas.children[0].rgba = utils.get_color_from_hex(
+            self.defaults[4])  # ideas_settings button
+        self.parent.parent.parent.ids.misc_settings_button.canvas.children[0].rgba = utils.get_color_from_hex(
+            self.defaults[4])  # misc_settings button
+        self.parent.parent.parent.ids.nav_bar.ids.settings_button.canvas.children[0].children[
+            0].rgba = utils.get_color_from_hex(self.defaults[7])  # settings button
+        self.parent.parent.parent.canvas.children[0].children[2].rgba = utils.get_color_from_hex(self.defaults[3])  # background
+
+        # Update MiscPanel colors
+        self.ids.primary_button.background_color = utils.get_color_from_hex(self.defaults[7])
+        self.ids.secondary_button.background_color = utils.get_color_from_hex(self.defaults[7])
+        self.ids.highlight_button.background_color = utils.get_color_from_hex(self.defaults[7])
+        self.ids.reset_button.background_color = utils.get_color_from_hex(self.defaults[7])
 
 
 # Popup that allows users to choose between three options.
@@ -760,11 +822,11 @@ class OptionsPopup(Popup):
         self.ids.option_b.text = options[1]
         self.ids.option_c.text = options[2]
 
-    def option_selected(self):
-        print(self.parent.parent.children[1].children[0]) # this is the path to about page, need to change to pantry page
-        # TODO pass option to relevant functions here
-
-
+    # Finds the produce items corresponding to the button pressed, and inserts it to the pantry
+    def option_selected(self, index):
+        item = self.parent.children[-1].children[0].matchs_queue.pop()[index][0]
+        if index != -1:
+            self.parent.children[-1].children[0].insert_produce(item)
 
 
 # ---------------------------------- Driver Functions ---------------------------------- #

@@ -139,6 +139,7 @@
 <PantryScrollMenu@ScrollView>:
     GridLayout:
         id: grid_layout
+        height: self.minimum_height
         size_hint_y: None
         cols: 1
 
@@ -196,6 +197,7 @@
 <IdeasScrollMenu@ScrollView>:
     GridLayout:
         id: grid_layout
+        height: self.minimum_height
         size_hint_y: None
         cols: 1
 
@@ -423,14 +425,12 @@
     BoxLayout:
         orientation: 'horizontal'
         Label:
-            size_hint_x: .1
-        Label:
-            size_hint_x: .2
+            size_hint_x: .5
             text: "Sorting on Startup"
             color: "#000000"
         BoxLayout:
             orientation: 'vertical'
-            size_hint_x: .2
+            size_hint_x: .4
             Label:
                 size_hint_y: .2
             Spinner:
@@ -445,7 +445,7 @@
             Label:
                 size_hint_y: .2
         Label:
-            size_hint_x: .1
+            size_hint_x: .2
 
     # Erase All Button
     BoxLayout:
@@ -458,6 +458,7 @@
             Label:
                 size_hint_y: .2
             Button:
+                id: erase_all_button
                 size_hint_y: .6
                 text: "Clear All"
                 background_normal: ''
@@ -481,7 +482,7 @@
     # Color picker
     BoxLayout:
         orientation: 'horizontal'
-        size_hint_y: .7
+        size_hint_y: .6
         Label:
             size_hint_x: .1
         ColorPicker:
@@ -495,21 +496,54 @@
     BoxLayout:
         orientation: 'horizontal'
         size_hint_y: .1
+        Label:
+            size_hint_x: .5
         Button:
+            id: primary_button
+            size_hint_x: 4
             text: 'Set as Primary'
+            background_normal: ''
+            background_color: utils.get_color_from_hex("#385E3C")
             on_release: root.update_primary_color()
+        Label:
+            size_hint_x: .05
         Button:
+            id: secondary_button
+            size_hint_x: 4
             text: 'Set as Secondary'
+            background_normal: ''
+            background_color: utils.get_color_from_hex("#385E3C")
             on_release: root.update_secondary_color()
+        Label:
+            size_hint_x: .05
         Button:
+            id: highlight_button
+            size_hint_x: 4
             text: 'Set at Highlight'
+            background_normal: ''
+            background_color: utils.get_color_from_hex("#385E3C")
             on_release: root.update_highlight_color()
+        Label:
+            size_hint_x: .5
+
+    Label:
+        size_hint_y: .01
 
     # Reset to defaults button
-    Button:
+    BoxLayout:
+        orientation: 'horizontal'
         size_hint_y: .1
-        text: 'Reset to Defaults'
-        on_release: root.set_default_colors()
+        Label:
+            size_hint_x: .5
+        Button:
+            id: reset_button
+            size_hint_x: 12.1
+            text: 'Reset to Defaults'
+            background_normal: ''
+            background_color: utils.get_color_from_hex("#385E3C")
+            on_release: root.set_default_colors()
+        Label:
+            size_hint_x: .5
 
 
 # Custom Spinner Options
@@ -527,6 +561,7 @@
     size_hint_x: .5
     size_hint_y: .5
     background_color: utils.get_color_from_hex("#99D19C")
+    overlay_color: 0, 0, 0, 0
     BoxLayout:
         orientation: 'vertical'
         Label:
@@ -537,7 +572,7 @@
             background_normal: ''
             background_color: utils.get_color_from_hex("#385E3C")
             text: 'Option A'
-            on_release: root.option_selected()
+            on_release: root.option_selected(0)
             on_release: root.dismiss()
         Label:
             size_hint_y: 1
@@ -547,7 +582,7 @@
             background_normal: ''
             background_color: utils.get_color_from_hex("#385E3C")
             text: 'Option B'
-            on_release: root.option_selected()
+            on_release: root.option_selected(1)
             on_release: root.dismiss()
         Label:
             size_hint_y: 1
@@ -557,7 +592,7 @@
             background_normal: ''
             background_color: utils.get_color_from_hex("#385E3C")
             text: 'Option C'
-            on_release: root.option_selected()
+            on_release: root.option_selected(2)
             on_release: root.dismiss()
         Label:
             size_hint_y: 1
@@ -567,6 +602,7 @@
             background_normal: ''
             background_color: utils.get_color_from_hex("#385E3C")
             text: 'Cancel'
+            on_release: root.option_selected(-1)
             on_release: root.dismiss()
         Label:
             size_hint_y: .5
@@ -991,11 +1027,6 @@ Manager:
                 Rectangle:
                     size: self.size
                     pos: self.pos
-
-        # TODO (delete)
-        Button:
-            text: 'test'
-            on_release: root.test()
 
         # Content
         Label:

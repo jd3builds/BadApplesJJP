@@ -195,14 +195,23 @@ def insert_general_table(item):
 def insert_user_table(item):
     normal_days = 0
 
+    first = item[6]
+    second = item[7]
+
+    if first is None:
+       first = 0
+    if second is None:
+       second = 0
+    sum = first + second
+
     if item[8] == 'Days' or item[8] == 'days':
-        normal_days = (item[6] + item[7]) / 2
+        normal_days = (sum) / 2
     elif item[8] == 'Weeks' or item[8] == 'weeks':
-        normal_days = (item[6] + item[7]) * 7 / 2
+        normal_days = (sum) * 7 / 2
     elif item[8] == 'Months' or item[8] == 'months':
-        normal_days = (item[6] + item[7]) * 30 / 2
+        normal_days = (sum) * 30 / 2
     elif item[8] == 'Years' or item[8] == 'years':
-        normal_days = (item[6] + item[7]) * 365 / 2
+        normal_days = (sum) * 365 / 2
 
     expirationDate = date.today() + timedelta(days=normal_days)
     item = list(item)
