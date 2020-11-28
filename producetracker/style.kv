@@ -149,23 +149,29 @@
 <PantryMenuItem@BoxLayout>:
     orientation: 'horizontal'
     size_hint_y: None
-    height: dp(30)
+    height: dp(35)
 
     # Padding
     Label:
         size_hint_x: .1
 
-    # Used Apple Button
+    # Used Button
     ImageButton:
         source: 'red_apple_icon.png'
         on_release: root.remove(True)
-        size_hint_x: .075
+        size_hint_x: .05
 
-    # Expired Apple Button
+    # Expired Button
     ImageButton:
         source: 'brown_apple_icon.png'
         on_release: root.remove(False)
-        size_hint_x: .075
+        size_hint_x: .05
+
+    # Eraser Button
+    ImageButton:
+        source: 'eraser_icon.png'
+        size_hint_x: .05
+        on_release: root.remove(False, False)
 
     # Padding
     Label:
@@ -608,6 +614,156 @@
             size_hint_y: .5
 
 
+# Overview About Panel
+<OverviewAbout@BoxLayout>:
+    orientation: 'vertical'
+    Label:
+        text: 'Overview'
+        bold: True
+        font_size: 18
+        color: utils.get_color_from_hex("#000501")
+        size_hint_y: .2
+    Label:
+        text: 'This provides a general overview of this app\'s workflow.\n\nThe Scan page allows you to scan in a receipt or list of items. If the items you entered are unclear, a popup \nwill open asking for clarification as to the intended item. From here, it will be added to your Pantry page,\nwhich contains a list of all your items. The Ideas page provides you with meaningful insights to help\nreduce waste based on your previous usage trends. The Settings page allows you to customize your experience\nand reset any of the pages or features.'
+        color: utils.get_color_from_hex("#000501")
+        halign: 'center'
+        size_hint_y: .6
+    Label:
+        text: 'Icons from https://icons8.com\nProduce data provided by http://www.eatbydate.com/'
+        color: utils.get_color_from_hex("#000501")
+        halign: 'center'
+        size_hint_y: 1
+
+
+# Pantry About Panel
+<PantryAbout@BoxLayout>:
+    orientation: 'vertical'
+    Label:
+        text: 'Pantry Page'
+        bold: True
+        font_size: 18
+        color: utils.get_color_from_hex("#000501")
+    Label:
+        text: 'The Pantry page displays all of the grocery items that are currently being tracked. Each item is listed on an \nindividual line with its name and days until expiration. The item turns red when it expires in a certain \nnumber of days (three by default). Each grocery item also has the following three buttons that remove the \nitem from the pantry and affect the recommendations on the Ideas page:'
+        color: utils.get_color_from_hex("#000501")
+        halign: 'center'
+
+    # Deletion buttons
+    BoxLayout:
+        orientation: 'horizontal'
+        Label:
+            size_hint_x: 1
+        # Used Button
+        ImageButton:
+            source: 'red_apple_icon.png'
+            size_hint_x: .5
+        Label:
+            text: 'Used'
+            color: utils.get_color_from_hex("#000501")
+            size_hint_x: .5
+        # Expired Button
+        ImageButton:
+            source: 'brown_apple_icon.png'
+            size_hint_x: .5
+        Label:
+            text: 'Expired'
+            color: utils.get_color_from_hex("#000501")
+            size_hint_x: .5
+        # Eraser Button
+        ImageButton:
+            source: 'eraser_icon.png'
+            size_hint_x: .5
+        Label:
+            text: 'Erase'
+            color: utils.get_color_from_hex("#000501")
+            size_hint_x: .5
+        Label
+            size_hint_x: 1
+
+    Label:
+        text: 'Note: Erasing an item will not add it to the Ideas page.\nThe Pantry page can also be sorted in the following three ways: '
+        color: utils.get_color_from_hex("#000501")
+        halign: 'center'
+
+    # Sorting buttons
+    BoxLayout:
+        orientation: 'horizontal'
+        Label
+        ImageButton:
+            source: 'search_icon.png'
+        Label:
+            text: 'Search'
+            color: utils.get_color_from_hex("#000501")
+        Label
+        ImageButton:
+            source: 'alph_sort_icon.png'
+        Label:
+            text: 'Alphabetical Sort'
+            color: utils.get_color_from_hex("#000501")
+        Label
+        ImageButton:
+            source: 'expired_sort_icon.png'
+        Label:
+            text: 'Sort By Expiration'
+            color: utils.get_color_from_hex("#000501")
+        Label
+
+    Label:
+        text: 'Lastly, grocery items can be directly added in the pantry via the manual input button \nin the upper-right corner. Multiple items can be added at once using commas to separate produce items and \nparentheses to denote quantity (e.g. "Apples, Grapes(10)").'
+        color: utils.get_color_from_hex("#000501")
+        halign: 'center'
+
+
+# Ideas About Panel
+<IdeasAbout@BoxLayout>:
+    orientation: 'vertical'
+    Label:
+        text: 'Ideas Page'
+        bold: True
+        font_size: 18
+        color: utils.get_color_from_hex("#000501")
+        size_hint_y: .2
+    Label:
+        text: 'The Ideas Page provides meaningful insights on your grocery usage. Whether you are wasting or consuming\nyour food will be indicated by the recent and overall trend, as well as the general recommendation.\nThis will allow you to gain meaningful insights on your usage and steps to take to reduce food waste.'
+        color: utils.get_color_from_hex("#000501")
+        halign: 'center'
+        size_hint_y: .3
+    Label:
+        text: 'The Ideas page can also be sorted in the following three ways: '
+        color: utils.get_color_from_hex("#000501")
+        halign: 'center'
+        size_hint_y: .4
+
+    # Sorting buttons
+    BoxLayout:
+        size_hint_y: .4
+        orientation: 'horizontal'
+        ImageButton:
+            source: 'search_icon.png'
+            size_hint_x: 1
+        Label:
+            text: 'Search'
+            color: utils.get_color_from_hex("#000501")
+            size_hint_x: 1
+        ImageButton:
+            source: 'alph_sort_icon.png'
+            size_hint_x: 1
+        Label:
+            text: 'Alphabetical Sort'
+            color: utils.get_color_from_hex("#000501")
+            size_hint_x: 1
+        ImageButton:
+            source: 'light_icon.png'
+            size_hint_x: 1
+        Label:
+            text: 'Sort By Recommendation'
+            color: utils.get_color_from_hex("#000501")
+            size_hint_x: 2
+        Label:
+            size_hint_x: .5
+    Label:
+        size_hint_y: 1
+
 #################### Pages  ####################
 
 Manager:
@@ -773,7 +929,7 @@ Manager:
             Label:
                 size_hint_x: .1
             Label:
-                text: 'Used/Expired'
+                text: 'Used/Expired/Erase'
                 color: utils.get_color_from_hex("#000000")
                 bold: True
                 size_hint_x: .15
@@ -1028,11 +1184,42 @@ Manager:
                     size: self.size
                     pos: self.pos
 
-        # Content
         Label:
-            text: 'Icons from https://icons8.com'
-            color: utils.get_color_from_hex("#000501")
-            size_hint_y: .8
+            size_hint_y: .01
+
+        # Settings Menu Bar
+        BoxLayout:
+            orientation: 'horizontal'
+            size_hint_y: .08
+            Button:
+                id: overview_about_button
+                text: 'Overview'
+                background_color: utils.get_color_from_hex("#73AB84")
+                font_size: 16
+                on_release: root.set_panel(0)
+            Button:
+                id: pantry_about_button
+                text: 'Pantry Page'
+                background_color: utils.get_color_from_hex("#73AB84")
+                font_size: 16
+                on_release: root.set_panel(1)
+            Button:
+                id: ideas_about_button
+                text: 'Ideas Page'
+                background_color: utils.get_color_from_hex("#73AB84")
+                font_size: 16
+                on_release: root.set_panel(2)
+
+        Label:
+            size_hint_y: .01
+
+        # Content
+        BoxLayout:
+            id: content_box
+            size_hint_y: .69
+
+        Label:
+            size_hint_y: .01
 
         # Navigation Bar
         ButtonBar:
@@ -1085,7 +1272,7 @@ Manager:
                 TextInput:
                     id: produce_input
                     multiline: False
-                    hint_text: 'i.e. Apple'
+                    hint_text: 'i.e. Grapes(5), Apples, Beef(2)'
                     input_type: 'text'
                     size_hint_x: .4
                     cursor_color: utils.get_color_from_hex("#73AB84")

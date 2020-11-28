@@ -18,6 +18,7 @@ from PIL import Image
 import pytesseract
 from enhance import preprocess
 from collections import deque
+import platform
 
 kivy.require('1.11.1')
 Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
@@ -168,8 +169,10 @@ class PantryPage(Screen):
 
         matchs = match_multiple_items(text)
         self.matchs_queue.append(matchs)
-        upper_thresh = matchs[-1][-1]
-        if upper_thresh < 1000:
+        print(matchs)
+        upper_thresh = matchs[2][-1]
+        mid_thresh = matchs[1][-1]
+        if (upper_thresh < .90) or mid_thresh >= .90 or (abs(upper_thresh - mid_thresh) <= .20):
             popup = OptionsPopup(self.defaults, [matchs[0][0][0], matchs[1][0][0], matchs[2][0][0]])
             popup.open()
         else:
@@ -399,9 +402,6 @@ class IdeasPage(Screen):
 
 class SettingsPage(Screen):
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     def on_pre_enter(self, *args):
         self.default_settings = query_settings()[0]
 
@@ -444,6 +444,21 @@ class AboutPage(Screen):
         for widget in self.ids.nav_bar.children: # button bar
             widget.canvas.children[0].children[0].rgba = utils.get_color_from_hex(self.defaults[4])
         self.ids.nav_bar.ids.about_button.canvas.children[0].children[0].rgba = utils.get_color_from_hex(self.defaults[7])  # about button
+
+        self.set_panel(0)
+
+    def set_panel(self, panel):
+        content_box = self.ids.content_box
+        content_box.clear_widgets()
+
+        self.default_settings = query_settings()[0]
+
+        if panel == 0:
+            content_box.add_widget(OverviewAbout(self.default_settings))
+        elif panel == 1:
+            content_box.add_widget(PantryAbout(self.default_settings))
+        elif panel == 2:
+            content_box.add_widget(IdeasAbout(self.default_settings))
 
 
 class InputPage(Screen):
@@ -529,7 +544,7 @@ class PantryMenuItem(BoxLayout):
         holder = query_recent_expiration_item_by_name(
             self.parent.parent.parent.parent.produce_list[calc_index].itemName)
 
-        if len(args) < 2 or (len(args) > 1 and not args[1]):
+        if len(args) < 2 or args[1]:
             # Update item if it already exists within the expirations table
             if len(holder) != 0:
                 update_recent_expirations_table(holder[0], args[0])
@@ -829,6 +844,22 @@ class OptionsPopup(Popup):
             self.parent.children[-1].children[0].insert_produce(item)
 
 
+class OverviewAbout(BoxLayout):
+    def __init__(self, defaults, **kwargs):
+        super().__init__(**kwargs)
+        self.defaults = list(defaults)
+
+
+class PantryAbout(BoxLayout):
+    def __init__(self, defaults, **kwargs):
+        super().__init__(**kwargs)
+        self.defaults = list(defaults)
+
+class IdeasAbout(BoxLayout):
+    def __init__(self, defaults, **kwargs):
+        super().__init__(**kwargs)
+        self.defaults = list(defaults)
+
 # ---------------------------------- Driver Functions ---------------------------------- #
 
 class BadApplesApp(App):
@@ -838,10 +869,10 @@ class BadApplesApp(App):
 
 
 def main():
-    # TODO Uncomment the following function calls when preparing final package
-    # os.system("sudo apt-get install xclip xsel")
-    # os.system("sudo apt install tesseract-ocr")
-    # os.system("sudo apt-get remove gstreamer1.0-alsa gstreamer1.0-libav gstreamer1.0-plugins-bad gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-ugly gstreamer1.0-pulseaudio libgstreamer-plugins-bad1.0-0 libgstreamer-plugins-base1.0-0 libgstreamer-plugins-good1.0-0 libgstreamer1.0-0")
+    if platform.system != 'Windows':
+        os.system("sudo apt-get install xclip xsel")
+        os.system("sudo apt install tesseract-ocr")
+        os.system("sudo apt-get remove gstreamer1.0-alsa gstreamer1.0-libav gstreamer1.0-plugins-bad gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-ugly gstreamer1.0-pulseaudio libgstreamer-plugins-bad1.0-0 libgstreamer-plugins-base1.0-0 libgstreamer-plugins-good1.0-0 libgstreamer1.0-0")
 
     BadApplesApp().run()
 
