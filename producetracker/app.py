@@ -444,6 +444,9 @@ class AboutPage(Screen):
         for widget in self.ids.nav_bar.children: # button bar
             widget.canvas.children[0].children[0].rgba = utils.get_color_from_hex(self.defaults[4])
         self.ids.nav_bar.ids.about_button.canvas.children[0].children[0].rgba = utils.get_color_from_hex(self.defaults[7])  # about button
+        self.ids.overview_about_button.canvas.children[0].rgba = utils.get_color_from_hex(self.defaults[4]) # overview_about_button
+        self.ids.pantry_about_button.canvas.children[0].rgba = utils.get_color_from_hex(self.defaults[4]) # pantry_about_button
+        self.ids.ideas_about_button.canvas.children[0].rgba = utils.get_color_from_hex(self.defaults[4]) # ideas_about_button
 
         self.set_panel(0)
 
