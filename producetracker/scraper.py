@@ -144,4 +144,10 @@ if __name__ == '__main__':
     scrape_category_of_items("https://www.eatbydate.com/proteins/nuts/", "Proteins", "Nuts and Seeds")
     scrape_category_of_items("https://www.eatbydate.com/proteins/poultry/", "Proteins", "Poultry")
     scrape_category_of_items("https://www.eatbydate.com/proteins/poultry/", "Proteins", "Seafood")
+
+    scrape_single_item_from_page("https://www.eatbydate.com/vegetables/fresh-vegetables/spinach/", "Vegetables", "Fresh Vegetables", "Spinach")
+    scrape_single_item_from_page("https://www.eatbydate.com/vegetables/fresh-vegetables/potatoes-shelf-life-expiration-date/", "Vegetables", "Fresh Vegetables", "Potato")
+    scrape_single_item_from_page("https://www.eatbydate.com/vegetables/fresh-vegetables/how-long-do-onions-last-shelf-life/", "Vegetables", "Fresh Vegetables", "Onion")
+    scrape_single_item_from_page("https://www.eatbydate.com/vegetables/fresh-vegetables/salad-shelf-life-expiration-date/", "Vegetables", "Fresh Vegetables", "Salad")
+
     print("Added a total of " + str(counter) + " items to the database")
