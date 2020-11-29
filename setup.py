@@ -2,7 +2,7 @@ import setuptools
 import os
 import platform
 
-if platform.system == 'Windows':
+if platform.system() == 'Windows':
 
     folder = os.path.dirname(os.path.realpath(__file__))
     req_path = folder + '/requirements.txt'
@@ -22,7 +22,7 @@ else:
 
 setuptools.setup(
     name="BAproducetracker",
-    version="2.0.0",
+    version="2.1.0",
     author="Brody, Joseph // Dillon, John // Estrada, Pablo",
     url="https://github.com/jd3builds/BadApplesJJP",
     packages=['producetracker'],
