@@ -51,7 +51,7 @@ Make sure your camera is working and accessible on the VM. Our application uses 
     # Make sure you have pip3 installed
     
     # install the pip module and dependences
-    pip3 install BAproducetracker==0.0.16
+    pip3 install BAproducetracker==2.3.0
     
     # Run the application (*)
     ~/.local/bin/bapt
