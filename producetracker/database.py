@@ -198,20 +198,24 @@ def insert_user_table(item):
     first = item[6]
     second = item[7]
 
-    if first is None:
-       first = 0
-    if second is None:
-       second = 0
-    sum = first + second
+    if first is not None and second is not None:
+        sum = (first + second) / 2
+    elif first is None and second is None:
+        sum = 0
+    elif first is None:
+       sum = second
+    elif second is None:
+       sum = first
 
-    if item[8] == 'Days' or item[8] == 'days':
-        normal_days = (sum) / 2
+    if item[8] is None or item[8] == 'Days' or item[8] == 'days':
+        normal_days = (sum)
     elif item[8] == 'Weeks' or item[8] == 'weeks':
-        normal_days = (sum) * 7 / 2
+        normal_days = (sum) * 7
     elif item[8] == 'Months' or item[8] == 'months':
-        normal_days = (sum) * 30 / 2
+        normal_days = (sum) * 30
     elif item[8] == 'Years' or item[8] == 'years':
-        normal_days = (sum) * 365 / 2
+        normal_days = (sum) * 365
+
 
     expirationDate = date.today() + timedelta(days=normal_days)
     item = list(item)
