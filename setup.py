@@ -22,7 +22,7 @@ else:
 
 setuptools.setup(
     name="BAproducetracker",
-    version="1.0.0",
+    version="2.0.0",
     author="Brody, Joseph // Dillon, John // Estrada, Pablo",
     url="https://github.com/jd3builds/BadApplesJJP",
     packages=['producetracker'],
