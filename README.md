@@ -59,4 +59,4 @@ Make sure your camera is working and accessible on the VM. Our application uses 
 (*) This step will also install a couple dependencies (Tesseract, xclip). It will ask for user password to install these dependencies. If the GUI says 'Python is not responding', don't press 'Force Quit' for the application, instead press 'Wait'. 
 
 # Source Code
-https://github.com/jd3builds/BadApplesProject/tree/master
+https://github.com/jd3builds/BadApplesJJP
