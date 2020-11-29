@@ -842,6 +842,7 @@ class OptionsPopup(Popup):
     def __init__(self, defaults, options, **kwargs):
         super().__init__(**kwargs)
         self.defaults = list(defaults)
+        self.pressed = False
 
         # Set colors
         self.background_color = utils.get_color_from_hex(self.defaults[3])
@@ -857,9 +858,12 @@ class OptionsPopup(Popup):
 
     # Finds the produce items corresponding to the button pressed, and inserts it to the pantry
     def option_selected(self, index):
-        item = self.parent.children[-1].children[0].matchs_queue.pop()[index][0]
-        if index != -1:
-            self.parent.children[-1].children[0].insert_produce(item)
+        if not self.pressed:
+            self.pressed = True
+            if self.parent.children[-1].children[0].matchs_queue:
+                item = self.parent.children[-1].children[0].matchs_queue.pop()[index][0]
+                if index != -1:
+                    self.parent.children[-1].children[0].insert_produce(item)
 
 
 class OverviewAbout(BoxLayout):
