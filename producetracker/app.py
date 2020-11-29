@@ -169,7 +169,6 @@ class PantryPage(Screen):
 
         matchs = match_multiple_items(text)
         self.matchs_queue.append(matchs)
-        print(matchs)
         upper_thresh = matchs[2][-1]
         mid_thresh = matchs[1][-1]
         if (upper_thresh < .90) or mid_thresh >= .90 or (abs(upper_thresh - mid_thresh) <= .20):
