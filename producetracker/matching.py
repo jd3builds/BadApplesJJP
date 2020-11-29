@@ -1,6 +1,11 @@
 import numpy as np
-from database import create_connection, execute_sql
+import platform
 from queue import PriorityQueue
+
+if platform.system == 'Windows':
+    from database import create_connection, execute_sql
+else:
+    from producetracker.database import create_connection, execute_sql
 
 class CustomPriorityQueue(PriorityQueue):
     def _put(self, item):

@@ -8,17 +8,24 @@ from kivy.uix.scrollview import ScrollView
 from kivy.uix.popup import Popup
 from kivy import utils
 from kivy.config import Config
-from utilities import *
-from database import *
-from matching import *
 import os
 import os.path
 import kivy.resources
 from PIL import Image
 import pytesseract
-from enhance import preprocess
 from collections import deque
 import platform
+
+if platform.system == 'Windows':
+    from utilities import *
+    from database import *
+    from matching import *
+    from enhance import preprocess
+else:
+    from producetracker.utilities import *
+    from producetracker.database import *
+    from producetracker.matching import *
+    from producetracker.enhance import preprocess
 
 kivy.require('1.11.1')
 Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
