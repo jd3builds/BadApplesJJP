@@ -16,7 +16,7 @@ import pytesseract
 from collections import deque
 import platform
 
-if platform.system == 'Windows':
+if platform.system() == 'Windows':
     from utilities import *
     from database import *
     from matching import *
@@ -593,12 +593,20 @@ class IdeasMenuItem(BoxLayout):
         elif count > 2:
             self.ids.suggestion_label.text = "Buy a little more"
             self.ids.recent_trend_label.text = "Low"
+            self.ids.suggestion_label.color = utils.get_color_from_hex('#536e1c')
+            self.ids.recent_trend_label.color = utils.get_color_from_hex('#536e1c')
+            self.ids.produce_label.color = utils.get_color_from_hex('#536e1c')
+            self.ids.lifetime_trend_label.color = utils.get_color_from_hex('#536e1c')
         elif count > -3:
             self.ids.suggestion_label.text = "Keep it up!"
             self.ids.recent_trend_label.text = "Neutral"
         elif count > -6:
             self.ids.suggestion_label.text = "Buy a little less"
             self.ids.recent_trend_label.text = "High"
+            self.ids.suggestion_label.color = utils.get_color_from_hex("#C40233")
+            self.ids.recent_trend_label.color = utils.get_color_from_hex('#C40233')
+            self.ids.produce_label.color = utils.get_color_from_hex('#C40233')
+            self.ids.lifetime_trend_label.color = utils.get_color_from_hex('#C40233')
         else:
             self.ids.suggestion_label.text = "Buy less!"
             self.ids.recent_trend_label.text = "Very High"
